@@ -5,10 +5,8 @@
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <meta name="referrer" content="no-referrer">
     <link rel="icon" type="image/svg+xml" href="favicon.svg" sizes="any">
-    <link rel="stylesheet" href="/stylesheets/styles.css">
-    <link rel="stylesheet" href="/stylesheets/github-light.css">
-    <link rel="stylesheet" href="/stylesheets/pygment_trac.css">
-    <link rel="stylesheet" href="/stylesheets/syntax.css">
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
     <meta name="viewport" content="width=device-width">
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -18,14 +16,27 @@
   <body>
     <div class="wrapper">
       <header>
-        <h1>MNLipp</h1>
-        <p><a rel="me" href="https://fosstodon.org/@mnl"><img alt="Mastodon Follow" 
-          src="https://img.shields.io/mastodon/follow/108843609567976408?domain=https%3A%2F%2Ffosstodon.org&style=social"></a></p>
-
-        <p class="view"><a href="https://github.com/mnlipp">View My GitHub Profile</a></p>
-
+        <div>
+        <div style="float: left;">
+          <h1><a style="color: #222;" href="http://jdrupes.org">JDrupes</a></h1>
+          <h3>By <a href="https://github.com/mnlipp">Michael N. Lipp</a></h3>
+          <p><a rel="me" href="https://fosstodon.org/@mnl"><img alt="Mastodon Follow" 
+            src="https://img.shields.io/mastodon/follow/108843609567976408?domain=https%3A%2F%2Ffosstodon.org&style=social"></a></p>
+        </div>
+        <div style="float: right; width: 7em;">
+          <img alt="Logo" src="favicon.svg">
+        </div>
+        <div style="clear:both;"></div>
+        </div>
+        <p></p>
       </header>
       <section>
+        <div class="post-date"><span class="post-meta">{{ page.date | date: "%b %-d, %Y" }}</span></div>
+        {% if page.tocTitle %}
+          <h1>{{ page.tocTitle }}</h1>
+          {% include toc.html html=content %}
+        {% endif %}
+      
         {{ content }}
       </section>
       <footer>
@@ -34,10 +45,10 @@
         &mdash; Theme derived from <a href="https://github.com/orderedlist/minimal">minimal</a></small></p>
       </footer>
     </div>
-    
-    <script type="text/javascript">
-      {% include scale.fix.js %}
-    </script>
-    
+
+    <script src="javascripts/scale.fix.js"></script>
+
+    {% include matomo.html %}
+
   </body>
 </html>

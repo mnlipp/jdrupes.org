@@ -1,4 +1,9 @@
-url: "https://mnlipp.github.io"
+url: "https://jdrupes.org"
+
+author: Michael N. Lipp
+
+description:
+  Information regarding the JDrupes projects 
 
 plugins:
   - jekyll-seo-tag
@@ -6,9 +11,6 @@ plugins:
 kramdown:
   input: GFM
   syntax_highlighter: rouge
-
-description:
-  Information regarding Michael N. Lipp's GitHub projects 
 
 sass:
     style: compressed  
