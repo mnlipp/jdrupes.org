@@ -2,3 +2,4 @@ _site/
 /index.md~
 /Gemfile.lock
 /.jekyll-cache/
+/.bundle/
