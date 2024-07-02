@@ -17,11 +17,11 @@ A javadoc doclet that handles Markdown comments.
 
 A non-blocking HTTP codec without any dependencies.
 
-## [VM-Operator](vm-operator/)
+## [VM-Operator](vm-operator/index.html)
 
 A Kubernetes operator for running virtual machines (notably Qemu VMs) as pods.
 
-## [Keycloak Moodle Authenticator](keycloak-moodle-auth/)
+## [Keycloak Moodle Authenticator](keycloak-moodle-auth/index.html)
 
 A Keycloak extension that uses a Moodle instance for authentication
 (and registration).
