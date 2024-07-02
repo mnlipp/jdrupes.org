@@ -1,0 +1,5 @@
+org.jdrupes.keycloak.moodleauth
+org.jdrupes.keycloak.moodleauth.moodle
+org.jdrupes.keycloak.moodleauth.moodle.actions
+org.jdrupes.keycloak.moodleauth.moodle.model
+org.jdrupes.keycloak.moodleauth.moodle.service
