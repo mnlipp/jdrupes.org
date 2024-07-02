@@ -20,3 +20,8 @@ A non-blocking HTTP codec without any dependencies.
 ## [VM-Operator](vm-operator/)
 
 A Kubernetes operator for running virtual machines (notably Qemu VMs) as pods.
+
+## [Keycloak Moodle Authenticator](keycloak-moodle-auth/)
+
+A Keycloak extension that uses a Moodle instance for authentication
+(and registration).
