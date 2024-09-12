@@ -1,7 +1,7 @@
 ---
 layout: default
 title: JDrupes by mnlipp
-description: The JDrupes projects
+description: Overview of all JDrupes projects
 ---
 
 # JDrupes Projects
