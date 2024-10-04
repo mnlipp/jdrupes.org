@@ -72,7 +72,7 @@ and thus the VM is automatically restarted. If set to `true`, the
 VM's state is set to "Stopped" when the VM terminates and the pod is
 deleted.
 
-[^oldSts]: Before version 4.0, the operator created a 
+[^oldSts]: Before version 3.4, the operator created a 
     [stateful set](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)
     that in turn created the pod and the PVCs (see below).
 
@@ -124,7 +124,7 @@ The name of the generated PVC is the VM's name with "-*name*-disk"
 of the information from the `volumeClaimTemplate` (with some additional
 labels, see below)[^oldStsDisks].
 
-[^oldStsDisks]: Before version 4.0 the `volumeClaimTemplate`s were
+[^oldStsDisks]: Before version 3.4 the `volumeClaimTemplate`s were
     copied in the definition of the stateful set. As a stateful set
     appends the started pod's name to the name of the volume claim
     templates when it creates the PVCs, the PVCs' name were
