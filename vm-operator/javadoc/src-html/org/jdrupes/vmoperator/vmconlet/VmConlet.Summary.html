@@ -44,7 +44,7 @@
 <span class="source-line-no">030</span><span id="line-30">import java.math.BigInteger;</span>
 <span class="source-line-no">031</span><span id="line-31">import java.time.Duration;</span>
 <span class="source-line-no">032</span><span id="line-32">import java.time.Instant;</span>
-<span class="source-line-no">033</span><span id="line-33">import java.util.HashSet;</span>
+<span class="source-line-no">033</span><span id="line-33">import java.util.EnumSet;</span>
 <span class="source-line-no">034</span><span id="line-34">import java.util.Optional;</span>
 <span class="source-line-no">035</span><span id="line-35">import java.util.Set;</span>
 <span class="source-line-no">036</span><span id="line-36">import org.jdrupes.json.JsonBeanDecoder;</span>
@@ -142,7 +142,7 @@
 <span class="source-line-no">128</span><span id="line-128">    protected Set&lt;RenderMode&gt; doRenderConlet(RenderConletRequestBase&lt;?&gt; event,</span>
 <span class="source-line-no">129</span><span id="line-129">            ConsoleConnection channel, String conletId, VmsModel conletState)</span>
 <span class="source-line-no">130</span><span id="line-130">            throws Exception {</span>
-<span class="source-line-no">131</span><span id="line-131">        Set&lt;RenderMode&gt; renderedAs = new HashSet&lt;&gt;();</span>
+<span class="source-line-no">131</span><span id="line-131">        Set&lt;RenderMode&gt; renderedAs = EnumSet.noneOf(RenderMode.class);</span>
 <span class="source-line-no">132</span><span id="line-132">        boolean sendVmInfos = false;</span>
 <span class="source-line-no">133</span><span id="line-133">        if (event.renderAs().contains(RenderMode.Preview)) {</span>
 <span class="source-line-no">134</span><span id="line-134">            Template tpl</span>
