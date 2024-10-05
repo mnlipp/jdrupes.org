@@ -67,7 +67,7 @@
 <span class="source-line-no">053</span><span id="line-53">import org.jdrupes.vmoperator.common.K8sObserver;</span>
 <span class="source-line-no">054</span><span id="line-54">import org.jdrupes.vmoperator.common.VmDefinitionModel;</span>
 <span class="source-line-no">055</span><span id="line-55">import org.jdrupes.vmoperator.common.VmDefinitionModel.Permission;</span>
-<span class="source-line-no">056</span><span id="line-56">import org.jdrupes.vmoperator.manager.events.ChannelCache;</span>
+<span class="source-line-no">056</span><span id="line-56">import org.jdrupes.vmoperator.manager.events.ChannelTracker;</span>
 <span class="source-line-no">057</span><span id="line-57">import org.jdrupes.vmoperator.manager.events.GetDisplayPassword;</span>
 <span class="source-line-no">058</span><span id="line-58">import org.jdrupes.vmoperator.manager.events.ModifyVm;</span>
 <span class="source-line-no">059</span><span id="line-59">import org.jdrupes.vmoperator.manager.events.ResetVm;</span>
@@ -136,8 +136,8 @@
 <span class="source-line-no">122</span><span id="line-122">        RenderMode.Preview, RenderMode.Edit);</span>
 <span class="source-line-no">123</span><span id="line-123">    private static final Set&lt;RenderMode&gt; MODES_FOR_GENERATED = RenderMode.asSet(</span>
 <span class="source-line-no">124</span><span id="line-124">        RenderMode.Preview, RenderMode.StickyPreview);</span>
-<span class="source-line-no">125</span><span id="line-125">    private final ChannelCache&lt;String, VmChannel,</span>
-<span class="source-line-no">126</span><span id="line-126">            VmDefinitionModel&gt; channelManager = new ChannelCache&lt;&gt;();</span>
+<span class="source-line-no">125</span><span id="line-125">    private final ChannelTracker&lt;String, VmChannel,</span>
+<span class="source-line-no">126</span><span id="line-126">            VmDefinitionModel&gt; channelTracker = new ChannelTracker&lt;&gt;();</span>
 <span class="source-line-no">127</span><span id="line-127">    private static ObjectMapper objectMapper</span>
 <span class="source-line-no">128</span><span id="line-128">        = new ObjectMapper().registerModule(new JavaTimeModule());</span>
 <span class="source-line-no">129</span><span id="line-129">    private Class&lt;?&gt; preferredIpVersion = Inet4Address.class;</span>
@@ -363,7 +363,7 @@
 <span class="source-line-no">349</span><span id="line-349"></span>
 <span class="source-line-no">350</span><span id="line-350">            // Remove conlet if definition has been removed</span>
 <span class="source-line-no">351</span><span id="line-351">            if (model.vmName() != null</span>
-<span class="source-line-no">352</span><span id="line-352">                &amp;&amp; !channelManager.associated(model.vmName()).isPresent()) {</span>
+<span class="source-line-no">352</span><span id="line-352">                &amp;&amp; !channelTracker.associated(model.vmName()).isPresent()) {</span>
 <span class="source-line-no">353</span><span id="line-353">                channel.respond(</span>
 <span class="source-line-no">354</span><span id="line-354">                    new DeleteConlet(conletId, Collections.emptySet()));</span>
 <span class="source-line-no">355</span><span id="line-355">                return Collections.emptySet();</span>
@@ -371,7 +371,7 @@
 <span class="source-line-no">357</span><span id="line-357"></span>
 <span class="source-line-no">358</span><span id="line-358">            // Don't render if user has not at least one permission</span>
 <span class="source-line-no">359</span><span id="line-359">            if (model.vmName() != null</span>
-<span class="source-line-no">360</span><span id="line-360">                &amp;&amp; channelManager.associated(model.vmName())</span>
+<span class="source-line-no">360</span><span id="line-360">                &amp;&amp; channelTracker.associated(model.vmName())</span>
 <span class="source-line-no">361</span><span id="line-361">                    .map(d -&gt; permissions(d, channel.session()).isEmpty())</span>
 <span class="source-line-no">362</span><span id="line-362">                    .orElse(true)) {</span>
 <span class="source-line-no">363</span><span id="line-363">                return Collections.emptySet();</span>
@@ -409,7 +409,7 @@
 <span class="source-line-no">395</span><span id="line-395">    }</span>
 <span class="source-line-no">396</span><span id="line-396"></span>
 <span class="source-line-no">397</span><span id="line-397">    private List&lt;String&gt; accessibleVms(ConsoleConnection channel) {</span>
-<span class="source-line-no">398</span><span id="line-398">        return channelManager.associated().stream()</span>
+<span class="source-line-no">398</span><span id="line-398">        return channelTracker.associated().stream()</span>
 <span class="source-line-no">399</span><span id="line-399">            .filter(d -&gt; !permissions(d, channel.session()).isEmpty())</span>
 <span class="source-line-no">400</span><span id="line-400">            .map(d -&gt; d.getMetadata().getName()).sorted().toList();</span>
 <span class="source-line-no">401</span><span id="line-401">    }</span>
@@ -433,7 +433,7 @@
 <span class="source-line-no">419</span><span id="line-419">        if (Strings.isNullOrEmpty(model.vmName())) {</span>
 <span class="source-line-no">420</span><span id="line-420">            return;</span>
 <span class="source-line-no">421</span><span id="line-421">        }</span>
-<span class="source-line-no">422</span><span id="line-422">        channelManager.associated(model.vmName()).ifPresent(vmDef -&gt; {</span>
+<span class="source-line-no">422</span><span id="line-422">        channelTracker.associated(model.vmName()).ifPresent(vmDef -&gt; {</span>
 <span class="source-line-no">423</span><span id="line-423">            try {</span>
 <span class="source-line-no">424</span><span id="line-424">                var def = JsonBeanDecoder.create(vmDef.data().toString())</span>
 <span class="source-line-no">425</span><span id="line-425">                    .readObject();</span>
@@ -479,9 +479,9 @@
 <span class="source-line-no">465</span><span id="line-465">            .remove("managedFields");</span>
 <span class="source-line-no">466</span><span id="line-466">        var vmName = vmDef.getMetadata().getName();</span>
 <span class="source-line-no">467</span><span id="line-467">        if (event.type() == K8sObserver.ResponseType.DELETED) {</span>
-<span class="source-line-no">468</span><span id="line-468">            channelManager.remove(vmName);</span>
+<span class="source-line-no">468</span><span id="line-468">            channelTracker.remove(vmName);</span>
 <span class="source-line-no">469</span><span id="line-469">        } else {</span>
-<span class="source-line-no">470</span><span id="line-470">            channelManager.put(vmName, channel, vmDef);</span>
+<span class="source-line-no">470</span><span id="line-470">            channelTracker.put(vmName, channel, vmDef);</span>
 <span class="source-line-no">471</span><span id="line-471">        }</span>
 <span class="source-line-no">472</span><span id="line-472">        for (var entry : conletIdsByConsoleConnection().entrySet()) {</span>
 <span class="source-line-no">473</span><span id="line-473">            var connection = entry.getKey();</span>
@@ -516,12 +516,12 @@
 <span class="source-line-no">502</span><span id="line-502"></span>
 <span class="source-line-no">503</span><span id="line-503">        // Handle command for selected VM</span>
 <span class="source-line-no">504</span><span id="line-504">        var both = Optional.ofNullable(model.vmName())</span>
-<span class="source-line-no">505</span><span id="line-505">            .flatMap(vm -&gt; channelManager.both(vm));</span>
+<span class="source-line-no">505</span><span id="line-505">            .flatMap(vm -&gt; channelTracker.value(vm));</span>
 <span class="source-line-no">506</span><span id="line-506">        if (both.isEmpty()) {</span>
 <span class="source-line-no">507</span><span id="line-507">            return;</span>
 <span class="source-line-no">508</span><span id="line-508">        }</span>
-<span class="source-line-no">509</span><span id="line-509">        var vmChannel = both.get().channel;</span>
-<span class="source-line-no">510</span><span id="line-510">        var vmDef = both.get().associated;</span>
+<span class="source-line-no">509</span><span id="line-509">        var vmChannel = both.get().channel();</span>
+<span class="source-line-no">510</span><span id="line-510">        var vmDef = both.get().associated();</span>
 <span class="source-line-no">511</span><span id="line-511">        var vmName = vmDef.metadata().getName();</span>
 <span class="source-line-no">512</span><span id="line-512">        var perms = permissions(vmDef, channel.session());</span>
 <span class="source-line-no">513</span><span id="line-513">        var resourceBundle = resourceBundle(channel.locale());</span>
@@ -570,7 +570,7 @@
 <span class="source-line-no">556</span><span id="line-556"></span>
 <span class="source-line-no">557</span><span id="line-557">    private void openConsole(String vmName, ConsoleConnection connection,</span>
 <span class="source-line-no">558</span><span id="line-558">            ViewerModel model, String password) {</span>
-<span class="source-line-no">559</span><span id="line-559">        var vmDef = channelManager.associated(vmName).orElse(null);</span>
+<span class="source-line-no">559</span><span id="line-559">        var vmDef = channelTracker.associated(vmName).orElse(null);</span>
 <span class="source-line-no">560</span><span id="line-560">        if (vmDef == null) {</span>
 <span class="source-line-no">561</span><span id="line-561">            return;</span>
 <span class="source-line-no">562</span><span id="line-562">        }</span>
