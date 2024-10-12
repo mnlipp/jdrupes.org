@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"org.jdrupes.jsonb.beans","l":"JavaBeanConverter"},{"p":"org.jdrupes.jsonb.beans","l":"JavaBeanDeserializer"},{"p":"org.jdrupes.jsonb.beans","l":"JavaBeanSerializer"}];updateSearchResults();
