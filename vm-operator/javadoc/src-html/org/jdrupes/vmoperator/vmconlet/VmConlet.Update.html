@@ -215,204 +215,203 @@
 <span class="source-line-no">201</span><span id="line-201">     *</span>
 <span class="source-line-no">202</span><span id="line-202">     * @param event the event</span>
 <span class="source-line-no">203</span><span id="line-203">     * @param channel the channel</span>
-<span class="source-line-no">204</span><span id="line-204">     * @throws JsonDecodeException the json decode exception</span>
-<span class="source-line-no">205</span><span id="line-205">     * @throws IOException </span>
-<span class="source-line-no">206</span><span id="line-206">     */</span>
-<span class="source-line-no">207</span><span id="line-207">    @Handler(namedChannels = "manager")</span>
-<span class="source-line-no">208</span><span id="line-208">    @SuppressWarnings({ "PMD.ConfusingTernary", "PMD.CognitiveComplexity",</span>
-<span class="source-line-no">209</span><span id="line-209">        "PMD.AvoidInstantiatingObjectsInLoops", "PMD.AvoidDuplicateLiterals",</span>
-<span class="source-line-no">210</span><span id="line-210">        "PMD.ConfusingArgumentToVarargsMethod" })</span>
-<span class="source-line-no">211</span><span id="line-211">    public void onVmDefChanged(VmDefChanged event, VmChannel channel)</span>
-<span class="source-line-no">212</span><span id="line-212">            throws IOException {</span>
-<span class="source-line-no">213</span><span id="line-213">        var vmName = event.vmDefinition().name();</span>
-<span class="source-line-no">214</span><span id="line-214">        if (event.type() == K8sObserver.ResponseType.DELETED) {</span>
-<span class="source-line-no">215</span><span id="line-215">            channelTracker.remove(vmName);</span>
-<span class="source-line-no">216</span><span id="line-216">            for (var entry : conletIdsByConsoleConnection().entrySet()) {</span>
-<span class="source-line-no">217</span><span id="line-217">                for (String conletId : entry.getValue()) {</span>
-<span class="source-line-no">218</span><span id="line-218">                    entry.getKey().respond(new NotifyConletView(type(),</span>
-<span class="source-line-no">219</span><span id="line-219">                        conletId, "removeVm", vmName));</span>
-<span class="source-line-no">220</span><span id="line-220">                }</span>
-<span class="source-line-no">221</span><span id="line-221">            }</span>
-<span class="source-line-no">222</span><span id="line-222">        } else {</span>
-<span class="source-line-no">223</span><span id="line-223">            var vmDef = event.vmDefinition();</span>
-<span class="source-line-no">224</span><span id="line-224">            channelTracker.put(vmName, channel, vmDef);</span>
-<span class="source-line-no">225</span><span id="line-225">            for (var entry : conletIdsByConsoleConnection().entrySet()) {</span>
-<span class="source-line-no">226</span><span id="line-226">                for (String conletId : entry.getValue()) {</span>
-<span class="source-line-no">227</span><span id="line-227">                    entry.getKey().respond(new NotifyConletView(type(),</span>
-<span class="source-line-no">228</span><span id="line-228">                        conletId, "updateVm", simplifiedVmDefinition(vmDef)));</span>
-<span class="source-line-no">229</span><span id="line-229">                }</span>
-<span class="source-line-no">230</span><span id="line-230">            }</span>
-<span class="source-line-no">231</span><span id="line-231">        }</span>
-<span class="source-line-no">232</span><span id="line-232"></span>
-<span class="source-line-no">233</span><span id="line-233">        var summary = evaluateSummary(true);</span>
-<span class="source-line-no">234</span><span id="line-234">        summarySeries.add(Instant.now(), summary.usedCpus, summary.usedRam);</span>
-<span class="source-line-no">235</span><span id="line-235">        for (var entry : conletIdsByConsoleConnection().entrySet()) {</span>
-<span class="source-line-no">236</span><span id="line-236">            for (String conletId : entry.getValue()) {</span>
-<span class="source-line-no">237</span><span id="line-237">                entry.getKey().respond(new NotifyConletView(type(),</span>
-<span class="source-line-no">238</span><span id="line-238">                    conletId, "updateSummary", summary));</span>
-<span class="source-line-no">239</span><span id="line-239">            }</span>
-<span class="source-line-no">240</span><span id="line-240">        }</span>
-<span class="source-line-no">241</span><span id="line-241">    }</span>
-<span class="source-line-no">242</span><span id="line-242"></span>
-<span class="source-line-no">243</span><span id="line-243">    /**</span>
-<span class="source-line-no">244</span><span id="line-244">     * Handle the periodic update event by sending {@link NotifyConletView}</span>
-<span class="source-line-no">245</span><span id="line-245">     * events.</span>
-<span class="source-line-no">246</span><span id="line-246">     *</span>
-<span class="source-line-no">247</span><span id="line-247">     * @param event the event</span>
-<span class="source-line-no">248</span><span id="line-248">     * @param connection the console connection</span>
-<span class="source-line-no">249</span><span id="line-249">     */</span>
-<span class="source-line-no">250</span><span id="line-250">    @Handler</span>
-<span class="source-line-no">251</span><span id="line-251">    @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")</span>
-<span class="source-line-no">252</span><span id="line-252">    public void onUpdate(Update event, ConsoleConnection connection) {</span>
-<span class="source-line-no">253</span><span id="line-253">        var summary = evaluateSummary(false);</span>
-<span class="source-line-no">254</span><span id="line-254">        summarySeries.add(Instant.now(), summary.usedCpus, summary.usedRam);</span>
-<span class="source-line-no">255</span><span id="line-255">        for (String conletId : conletIds(connection)) {</span>
-<span class="source-line-no">256</span><span id="line-256">            connection.respond(new NotifyConletView(type(),</span>
-<span class="source-line-no">257</span><span id="line-257">                conletId, "updateSummary", summary));</span>
-<span class="source-line-no">258</span><span id="line-258">        }</span>
-<span class="source-line-no">259</span><span id="line-259">    }</span>
-<span class="source-line-no">260</span><span id="line-260"></span>
-<span class="source-line-no">261</span><span id="line-261">    /**</span>
-<span class="source-line-no">262</span><span id="line-262">     * The Class Summary.</span>
-<span class="source-line-no">263</span><span id="line-263">     */</span>
-<span class="source-line-no">264</span><span id="line-264">    @SuppressWarnings("PMD.DataClass")</span>
-<span class="source-line-no">265</span><span id="line-265">    public static class Summary {</span>
-<span class="source-line-no">266</span><span id="line-266"></span>
-<span class="source-line-no">267</span><span id="line-267">        /** The total vms. */</span>
-<span class="source-line-no">268</span><span id="line-268">        public int totalVms;</span>
-<span class="source-line-no">269</span><span id="line-269"></span>
-<span class="source-line-no">270</span><span id="line-270">        /** The running vms. */</span>
-<span class="source-line-no">271</span><span id="line-271">        public long runningVms;</span>
-<span class="source-line-no">272</span><span id="line-272"></span>
-<span class="source-line-no">273</span><span id="line-273">        /** The used cpus. */</span>
-<span class="source-line-no">274</span><span id="line-274">        public long usedCpus;</span>
-<span class="source-line-no">275</span><span id="line-275"></span>
-<span class="source-line-no">276</span><span id="line-276">        /** The used ram. */</span>
-<span class="source-line-no">277</span><span id="line-277">        public BigInteger usedRam = BigInteger.ZERO;</span>
-<span class="source-line-no">278</span><span id="line-278"></span>
-<span class="source-line-no">279</span><span id="line-279">        /**</span>
-<span class="source-line-no">280</span><span id="line-280">         * Gets the total vms.</span>
-<span class="source-line-no">281</span><span id="line-281">         *</span>
-<span class="source-line-no">282</span><span id="line-282">         * @return the totalVms</span>
-<span class="source-line-no">283</span><span id="line-283">         */</span>
-<span class="source-line-no">284</span><span id="line-284">        public int getTotalVms() {</span>
-<span class="source-line-no">285</span><span id="line-285">            return totalVms;</span>
-<span class="source-line-no">286</span><span id="line-286">        }</span>
-<span class="source-line-no">287</span><span id="line-287"></span>
-<span class="source-line-no">288</span><span id="line-288">        /**</span>
-<span class="source-line-no">289</span><span id="line-289">         * Gets the running vms.</span>
-<span class="source-line-no">290</span><span id="line-290">         *</span>
-<span class="source-line-no">291</span><span id="line-291">         * @return the runningVms</span>
-<span class="source-line-no">292</span><span id="line-292">         */</span>
-<span class="source-line-no">293</span><span id="line-293">        public long getRunningVms() {</span>
-<span class="source-line-no">294</span><span id="line-294">            return runningVms;</span>
-<span class="source-line-no">295</span><span id="line-295">        }</span>
-<span class="source-line-no">296</span><span id="line-296"></span>
-<span class="source-line-no">297</span><span id="line-297">        /**</span>
-<span class="source-line-no">298</span><span id="line-298">         * Gets the used cpus.</span>
-<span class="source-line-no">299</span><span id="line-299">         *</span>
-<span class="source-line-no">300</span><span id="line-300">         * @return the usedCpus</span>
-<span class="source-line-no">301</span><span id="line-301">         */</span>
-<span class="source-line-no">302</span><span id="line-302">        public long getUsedCpus() {</span>
-<span class="source-line-no">303</span><span id="line-303">            return usedCpus;</span>
-<span class="source-line-no">304</span><span id="line-304">        }</span>
-<span class="source-line-no">305</span><span id="line-305"></span>
-<span class="source-line-no">306</span><span id="line-306">        /**</span>
-<span class="source-line-no">307</span><span id="line-307">         * Gets the used ram. Returned as String for Json rendering.</span>
-<span class="source-line-no">308</span><span id="line-308">         *</span>
-<span class="source-line-no">309</span><span id="line-309">         * @return the usedRam</span>
-<span class="source-line-no">310</span><span id="line-310">         */</span>
-<span class="source-line-no">311</span><span id="line-311">        public String getUsedRam() {</span>
-<span class="source-line-no">312</span><span id="line-312">            return usedRam.toString();</span>
-<span class="source-line-no">313</span><span id="line-313">        }</span>
-<span class="source-line-no">314</span><span id="line-314"></span>
-<span class="source-line-no">315</span><span id="line-315">    }</span>
-<span class="source-line-no">316</span><span id="line-316"></span>
-<span class="source-line-no">317</span><span id="line-317">    @SuppressWarnings({ "PMD.AvoidLiteralsInIfCondition",</span>
-<span class="source-line-no">318</span><span id="line-318">        "PMD.LambdaCanBeMethodReference" })</span>
-<span class="source-line-no">319</span><span id="line-319">    private Summary evaluateSummary(boolean force) {</span>
-<span class="source-line-no">320</span><span id="line-320">        if (!force &amp;&amp; cachedSummary != null) {</span>
-<span class="source-line-no">321</span><span id="line-321">            return cachedSummary;</span>
-<span class="source-line-no">322</span><span id="line-322">        }</span>
-<span class="source-line-no">323</span><span id="line-323">        Summary summary = new Summary();</span>
-<span class="source-line-no">324</span><span id="line-324">        for (var vmDef : channelTracker.associated()) {</span>
-<span class="source-line-no">325</span><span id="line-325">            summary.totalVms += 1;</span>
-<span class="source-line-no">326</span><span id="line-326">            var status = vmDef.status();</span>
-<span class="source-line-no">327</span><span id="line-327">            summary.usedCpus += DataPath.&lt;Number&gt; get(status, "cpus")</span>
-<span class="source-line-no">328</span><span id="line-328">                .map(Number::intValue).orElse(0);</span>
-<span class="source-line-no">329</span><span id="line-329">            summary.usedRam = summary.usedRam</span>
-<span class="source-line-no">330</span><span id="line-330">                .add(DataPath.&lt;String&gt; get(status, "ram")</span>
-<span class="source-line-no">331</span><span id="line-331">                    .map(r -&gt; Quantity.fromString(r).getNumber().toBigInteger())</span>
-<span class="source-line-no">332</span><span id="line-332">                    .orElse(BigInteger.ZERO));</span>
-<span class="source-line-no">333</span><span id="line-333">            summary.runningVms = DataPath</span>
-<span class="source-line-no">334</span><span id="line-334">                .&lt;List&lt;Map&lt;String, Object&gt;&gt;&gt; get(vmDef.status(), "conditions")</span>
-<span class="source-line-no">335</span><span id="line-335">                .orElse(Collections.emptyList()).stream()</span>
-<span class="source-line-no">336</span><span id="line-336">                .filter(cond -&gt; DataPath.get(cond, "type")</span>
-<span class="source-line-no">337</span><span id="line-337">                    .map(t -&gt; "Running".equals(t)).orElse(false)</span>
-<span class="source-line-no">338</span><span id="line-338">                    &amp;&amp; DataPath.get(cond, "status")</span>
-<span class="source-line-no">339</span><span id="line-339">                        .map(s -&gt; "True".equals(s)).orElse(false))</span>
-<span class="source-line-no">340</span><span id="line-340">                .count();</span>
-<span class="source-line-no">341</span><span id="line-341">        }</span>
-<span class="source-line-no">342</span><span id="line-342">        cachedSummary = summary;</span>
-<span class="source-line-no">343</span><span id="line-343">        return summary;</span>
-<span class="source-line-no">344</span><span id="line-344">    }</span>
-<span class="source-line-no">345</span><span id="line-345"></span>
-<span class="source-line-no">346</span><span id="line-346">    @Override</span>
-<span class="source-line-no">347</span><span id="line-347">    @SuppressWarnings("PMD.AvoidDecimalLiteralsInBigDecimalConstructor")</span>
-<span class="source-line-no">348</span><span id="line-348">    protected void doUpdateConletState(NotifyConletModel event,</span>
-<span class="source-line-no">349</span><span id="line-349">            ConsoleConnection channel, VmsModel conletState)</span>
-<span class="source-line-no">350</span><span id="line-350">            throws Exception {</span>
-<span class="source-line-no">351</span><span id="line-351">        event.stop();</span>
-<span class="source-line-no">352</span><span id="line-352">        String vmName = event.param(0);</span>
-<span class="source-line-no">353</span><span id="line-353">        var vmChannel = channelTracker.channel(vmName).orElse(null);</span>
-<span class="source-line-no">354</span><span id="line-354">        if (vmChannel == null) {</span>
-<span class="source-line-no">355</span><span id="line-355">            return;</span>
-<span class="source-line-no">356</span><span id="line-356">        }</span>
-<span class="source-line-no">357</span><span id="line-357">        switch (event.method()) {</span>
-<span class="source-line-no">358</span><span id="line-358">        case "start":</span>
-<span class="source-line-no">359</span><span id="line-359">            fire(new ModifyVm(vmName, "state", "Running", vmChannel));</span>
-<span class="source-line-no">360</span><span id="line-360">            break;</span>
-<span class="source-line-no">361</span><span id="line-361">        case "stop":</span>
-<span class="source-line-no">362</span><span id="line-362">            fire(new ModifyVm(vmName, "state", "Stopped", vmChannel));</span>
-<span class="source-line-no">363</span><span id="line-363">            break;</span>
-<span class="source-line-no">364</span><span id="line-364">        case "cpus":</span>
-<span class="source-line-no">365</span><span id="line-365">            fire(new ModifyVm(vmName, "currentCpus",</span>
-<span class="source-line-no">366</span><span id="line-366">                new BigDecimal(event.param(1).toString()).toBigInteger(),</span>
-<span class="source-line-no">367</span><span id="line-367">                vmChannel));</span>
-<span class="source-line-no">368</span><span id="line-368">            break;</span>
-<span class="source-line-no">369</span><span id="line-369">        case "ram":</span>
-<span class="source-line-no">370</span><span id="line-370">            fire(new ModifyVm(vmName, "currentRam",</span>
-<span class="source-line-no">371</span><span id="line-371">                new Quantity(new BigDecimal(event.param(1).toString()),</span>
-<span class="source-line-no">372</span><span id="line-372">                    Format.BINARY_SI).toSuffixedString(),</span>
-<span class="source-line-no">373</span><span id="line-373">                vmChannel));</span>
-<span class="source-line-no">374</span><span id="line-374">            break;</span>
-<span class="source-line-no">375</span><span id="line-375">        default:// ignore</span>
-<span class="source-line-no">376</span><span id="line-376">            break;</span>
-<span class="source-line-no">377</span><span id="line-377">        }</span>
-<span class="source-line-no">378</span><span id="line-378">    }</span>
-<span class="source-line-no">379</span><span id="line-379"></span>
-<span class="source-line-no">380</span><span id="line-380">    @Override</span>
-<span class="source-line-no">381</span><span id="line-381">    protected boolean doSetLocale(SetLocale event, ConsoleConnection channel,</span>
-<span class="source-line-no">382</span><span id="line-382">            String conletId) throws Exception {</span>
-<span class="source-line-no">383</span><span id="line-383">        return true;</span>
-<span class="source-line-no">384</span><span id="line-384">    }</span>
-<span class="source-line-no">385</span><span id="line-385"></span>
-<span class="source-line-no">386</span><span id="line-386">    /**</span>
-<span class="source-line-no">387</span><span id="line-387">     * The Class VmsModel.</span>
-<span class="source-line-no">388</span><span id="line-388">     */</span>
-<span class="source-line-no">389</span><span id="line-389">    public class VmsModel extends ConletBaseModel {</span>
-<span class="source-line-no">390</span><span id="line-390"></span>
-<span class="source-line-no">391</span><span id="line-391">        /**</span>
-<span class="source-line-no">392</span><span id="line-392">         * Instantiates a new vms model.</span>
-<span class="source-line-no">393</span><span id="line-393">         *</span>
-<span class="source-line-no">394</span><span id="line-394">         * @param conletId the conlet id</span>
-<span class="source-line-no">395</span><span id="line-395">         */</span>
-<span class="source-line-no">396</span><span id="line-396">        public VmsModel(String conletId) {</span>
-<span class="source-line-no">397</span><span id="line-397">            super(conletId);</span>
-<span class="source-line-no">398</span><span id="line-398">        }</span>
-<span class="source-line-no">399</span><span id="line-399"></span>
-<span class="source-line-no">400</span><span id="line-400">    }</span>
-<span class="source-line-no">401</span><span id="line-401">}</span>
+<span class="source-line-no">204</span><span id="line-204">     * @throws IOException </span>
+<span class="source-line-no">205</span><span id="line-205">     */</span>
+<span class="source-line-no">206</span><span id="line-206">    @Handler(namedChannels = "manager")</span>
+<span class="source-line-no">207</span><span id="line-207">    @SuppressWarnings({ "PMD.ConfusingTernary", "PMD.CognitiveComplexity",</span>
+<span class="source-line-no">208</span><span id="line-208">        "PMD.AvoidInstantiatingObjectsInLoops", "PMD.AvoidDuplicateLiterals",</span>
+<span class="source-line-no">209</span><span id="line-209">        "PMD.ConfusingArgumentToVarargsMethod" })</span>
+<span class="source-line-no">210</span><span id="line-210">    public void onVmDefChanged(VmDefChanged event, VmChannel channel)</span>
+<span class="source-line-no">211</span><span id="line-211">            throws IOException {</span>
+<span class="source-line-no">212</span><span id="line-212">        var vmName = event.vmDefinition().name();</span>
+<span class="source-line-no">213</span><span id="line-213">        if (event.type() == K8sObserver.ResponseType.DELETED) {</span>
+<span class="source-line-no">214</span><span id="line-214">            channelTracker.remove(vmName);</span>
+<span class="source-line-no">215</span><span id="line-215">            for (var entry : conletIdsByConsoleConnection().entrySet()) {</span>
+<span class="source-line-no">216</span><span id="line-216">                for (String conletId : entry.getValue()) {</span>
+<span class="source-line-no">217</span><span id="line-217">                    entry.getKey().respond(new NotifyConletView(type(),</span>
+<span class="source-line-no">218</span><span id="line-218">                        conletId, "removeVm", vmName));</span>
+<span class="source-line-no">219</span><span id="line-219">                }</span>
+<span class="source-line-no">220</span><span id="line-220">            }</span>
+<span class="source-line-no">221</span><span id="line-221">        } else {</span>
+<span class="source-line-no">222</span><span id="line-222">            var vmDef = event.vmDefinition();</span>
+<span class="source-line-no">223</span><span id="line-223">            channelTracker.put(vmName, channel, vmDef);</span>
+<span class="source-line-no">224</span><span id="line-224">            for (var entry : conletIdsByConsoleConnection().entrySet()) {</span>
+<span class="source-line-no">225</span><span id="line-225">                for (String conletId : entry.getValue()) {</span>
+<span class="source-line-no">226</span><span id="line-226">                    entry.getKey().respond(new NotifyConletView(type(),</span>
+<span class="source-line-no">227</span><span id="line-227">                        conletId, "updateVm", simplifiedVmDefinition(vmDef)));</span>
+<span class="source-line-no">228</span><span id="line-228">                }</span>
+<span class="source-line-no">229</span><span id="line-229">            }</span>
+<span class="source-line-no">230</span><span id="line-230">        }</span>
+<span class="source-line-no">231</span><span id="line-231"></span>
+<span class="source-line-no">232</span><span id="line-232">        var summary = evaluateSummary(true);</span>
+<span class="source-line-no">233</span><span id="line-233">        summarySeries.add(Instant.now(), summary.usedCpus, summary.usedRam);</span>
+<span class="source-line-no">234</span><span id="line-234">        for (var entry : conletIdsByConsoleConnection().entrySet()) {</span>
+<span class="source-line-no">235</span><span id="line-235">            for (String conletId : entry.getValue()) {</span>
+<span class="source-line-no">236</span><span id="line-236">                entry.getKey().respond(new NotifyConletView(type(),</span>
+<span class="source-line-no">237</span><span id="line-237">                    conletId, "updateSummary", summary));</span>
+<span class="source-line-no">238</span><span id="line-238">            }</span>
+<span class="source-line-no">239</span><span id="line-239">        }</span>
+<span class="source-line-no">240</span><span id="line-240">    }</span>
+<span class="source-line-no">241</span><span id="line-241"></span>
+<span class="source-line-no">242</span><span id="line-242">    /**</span>
+<span class="source-line-no">243</span><span id="line-243">     * Handle the periodic update event by sending {@link NotifyConletView}</span>
+<span class="source-line-no">244</span><span id="line-244">     * events.</span>
+<span class="source-line-no">245</span><span id="line-245">     *</span>
+<span class="source-line-no">246</span><span id="line-246">     * @param event the event</span>
+<span class="source-line-no">247</span><span id="line-247">     * @param connection the console connection</span>
+<span class="source-line-no">248</span><span id="line-248">     */</span>
+<span class="source-line-no">249</span><span id="line-249">    @Handler</span>
+<span class="source-line-no">250</span><span id="line-250">    @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")</span>
+<span class="source-line-no">251</span><span id="line-251">    public void onUpdate(Update event, ConsoleConnection connection) {</span>
+<span class="source-line-no">252</span><span id="line-252">        var summary = evaluateSummary(false);</span>
+<span class="source-line-no">253</span><span id="line-253">        summarySeries.add(Instant.now(), summary.usedCpus, summary.usedRam);</span>
+<span class="source-line-no">254</span><span id="line-254">        for (String conletId : conletIds(connection)) {</span>
+<span class="source-line-no">255</span><span id="line-255">            connection.respond(new NotifyConletView(type(),</span>
+<span class="source-line-no">256</span><span id="line-256">                conletId, "updateSummary", summary));</span>
+<span class="source-line-no">257</span><span id="line-257">        }</span>
+<span class="source-line-no">258</span><span id="line-258">    }</span>
+<span class="source-line-no">259</span><span id="line-259"></span>
+<span class="source-line-no">260</span><span id="line-260">    /**</span>
+<span class="source-line-no">261</span><span id="line-261">     * The Class Summary.</span>
+<span class="source-line-no">262</span><span id="line-262">     */</span>
+<span class="source-line-no">263</span><span id="line-263">    @SuppressWarnings("PMD.DataClass")</span>
+<span class="source-line-no">264</span><span id="line-264">    public static class Summary {</span>
+<span class="source-line-no">265</span><span id="line-265"></span>
+<span class="source-line-no">266</span><span id="line-266">        /** The total vms. */</span>
+<span class="source-line-no">267</span><span id="line-267">        public int totalVms;</span>
+<span class="source-line-no">268</span><span id="line-268"></span>
+<span class="source-line-no">269</span><span id="line-269">        /** The running vms. */</span>
+<span class="source-line-no">270</span><span id="line-270">        public long runningVms;</span>
+<span class="source-line-no">271</span><span id="line-271"></span>
+<span class="source-line-no">272</span><span id="line-272">        /** The used cpus. */</span>
+<span class="source-line-no">273</span><span id="line-273">        public long usedCpus;</span>
+<span class="source-line-no">274</span><span id="line-274"></span>
+<span class="source-line-no">275</span><span id="line-275">        /** The used ram. */</span>
+<span class="source-line-no">276</span><span id="line-276">        public BigInteger usedRam = BigInteger.ZERO;</span>
+<span class="source-line-no">277</span><span id="line-277"></span>
+<span class="source-line-no">278</span><span id="line-278">        /**</span>
+<span class="source-line-no">279</span><span id="line-279">         * Gets the total vms.</span>
+<span class="source-line-no">280</span><span id="line-280">         *</span>
+<span class="source-line-no">281</span><span id="line-281">         * @return the totalVms</span>
+<span class="source-line-no">282</span><span id="line-282">         */</span>
+<span class="source-line-no">283</span><span id="line-283">        public int getTotalVms() {</span>
+<span class="source-line-no">284</span><span id="line-284">            return totalVms;</span>
+<span class="source-line-no">285</span><span id="line-285">        }</span>
+<span class="source-line-no">286</span><span id="line-286"></span>
+<span class="source-line-no">287</span><span id="line-287">        /**</span>
+<span class="source-line-no">288</span><span id="line-288">         * Gets the running vms.</span>
+<span class="source-line-no">289</span><span id="line-289">         *</span>
+<span class="source-line-no">290</span><span id="line-290">         * @return the runningVms</span>
+<span class="source-line-no">291</span><span id="line-291">         */</span>
+<span class="source-line-no">292</span><span id="line-292">        public long getRunningVms() {</span>
+<span class="source-line-no">293</span><span id="line-293">            return runningVms;</span>
+<span class="source-line-no">294</span><span id="line-294">        }</span>
+<span class="source-line-no">295</span><span id="line-295"></span>
+<span class="source-line-no">296</span><span id="line-296">        /**</span>
+<span class="source-line-no">297</span><span id="line-297">         * Gets the used cpus.</span>
+<span class="source-line-no">298</span><span id="line-298">         *</span>
+<span class="source-line-no">299</span><span id="line-299">         * @return the usedCpus</span>
+<span class="source-line-no">300</span><span id="line-300">         */</span>
+<span class="source-line-no">301</span><span id="line-301">        public long getUsedCpus() {</span>
+<span class="source-line-no">302</span><span id="line-302">            return usedCpus;</span>
+<span class="source-line-no">303</span><span id="line-303">        }</span>
+<span class="source-line-no">304</span><span id="line-304"></span>
+<span class="source-line-no">305</span><span id="line-305">        /**</span>
+<span class="source-line-no">306</span><span id="line-306">         * Gets the used ram. Returned as String for Json rendering.</span>
+<span class="source-line-no">307</span><span id="line-307">         *</span>
+<span class="source-line-no">308</span><span id="line-308">         * @return the usedRam</span>
+<span class="source-line-no">309</span><span id="line-309">         */</span>
+<span class="source-line-no">310</span><span id="line-310">        public String getUsedRam() {</span>
+<span class="source-line-no">311</span><span id="line-311">            return usedRam.toString();</span>
+<span class="source-line-no">312</span><span id="line-312">        }</span>
+<span class="source-line-no">313</span><span id="line-313"></span>
+<span class="source-line-no">314</span><span id="line-314">    }</span>
+<span class="source-line-no">315</span><span id="line-315"></span>
+<span class="source-line-no">316</span><span id="line-316">    @SuppressWarnings({ "PMD.AvoidLiteralsInIfCondition",</span>
+<span class="source-line-no">317</span><span id="line-317">        "PMD.LambdaCanBeMethodReference" })</span>
+<span class="source-line-no">318</span><span id="line-318">    private Summary evaluateSummary(boolean force) {</span>
+<span class="source-line-no">319</span><span id="line-319">        if (!force &amp;&amp; cachedSummary != null) {</span>
+<span class="source-line-no">320</span><span id="line-320">            return cachedSummary;</span>
+<span class="source-line-no">321</span><span id="line-321">        }</span>
+<span class="source-line-no">322</span><span id="line-322">        Summary summary = new Summary();</span>
+<span class="source-line-no">323</span><span id="line-323">        for (var vmDef : channelTracker.associated()) {</span>
+<span class="source-line-no">324</span><span id="line-324">            summary.totalVms += 1;</span>
+<span class="source-line-no">325</span><span id="line-325">            var status = vmDef.status();</span>
+<span class="source-line-no">326</span><span id="line-326">            summary.usedCpus += DataPath.&lt;Number&gt; get(status, "cpus")</span>
+<span class="source-line-no">327</span><span id="line-327">                .map(Number::intValue).orElse(0);</span>
+<span class="source-line-no">328</span><span id="line-328">            summary.usedRam = summary.usedRam</span>
+<span class="source-line-no">329</span><span id="line-329">                .add(DataPath.&lt;String&gt; get(status, "ram")</span>
+<span class="source-line-no">330</span><span id="line-330">                    .map(r -&gt; Quantity.fromString(r).getNumber().toBigInteger())</span>
+<span class="source-line-no">331</span><span id="line-331">                    .orElse(BigInteger.ZERO));</span>
+<span class="source-line-no">332</span><span id="line-332">            summary.runningVms = DataPath</span>
+<span class="source-line-no">333</span><span id="line-333">                .&lt;List&lt;Map&lt;String, Object&gt;&gt;&gt; get(vmDef.status(), "conditions")</span>
+<span class="source-line-no">334</span><span id="line-334">                .orElse(Collections.emptyList()).stream()</span>
+<span class="source-line-no">335</span><span id="line-335">                .filter(cond -&gt; DataPath.get(cond, "type")</span>
+<span class="source-line-no">336</span><span id="line-336">                    .map(t -&gt; "Running".equals(t)).orElse(false)</span>
+<span class="source-line-no">337</span><span id="line-337">                    &amp;&amp; DataPath.get(cond, "status")</span>
+<span class="source-line-no">338</span><span id="line-338">                        .map(s -&gt; "True".equals(s)).orElse(false))</span>
+<span class="source-line-no">339</span><span id="line-339">                .count();</span>
+<span class="source-line-no">340</span><span id="line-340">        }</span>
+<span class="source-line-no">341</span><span id="line-341">        cachedSummary = summary;</span>
+<span class="source-line-no">342</span><span id="line-342">        return summary;</span>
+<span class="source-line-no">343</span><span id="line-343">    }</span>
+<span class="source-line-no">344</span><span id="line-344"></span>
+<span class="source-line-no">345</span><span id="line-345">    @Override</span>
+<span class="source-line-no">346</span><span id="line-346">    @SuppressWarnings("PMD.AvoidDecimalLiteralsInBigDecimalConstructor")</span>
+<span class="source-line-no">347</span><span id="line-347">    protected void doUpdateConletState(NotifyConletModel event,</span>
+<span class="source-line-no">348</span><span id="line-348">            ConsoleConnection channel, VmsModel conletState)</span>
+<span class="source-line-no">349</span><span id="line-349">            throws Exception {</span>
+<span class="source-line-no">350</span><span id="line-350">        event.stop();</span>
+<span class="source-line-no">351</span><span id="line-351">        String vmName = event.param(0);</span>
+<span class="source-line-no">352</span><span id="line-352">        var vmChannel = channelTracker.channel(vmName).orElse(null);</span>
+<span class="source-line-no">353</span><span id="line-353">        if (vmChannel == null) {</span>
+<span class="source-line-no">354</span><span id="line-354">            return;</span>
+<span class="source-line-no">355</span><span id="line-355">        }</span>
+<span class="source-line-no">356</span><span id="line-356">        switch (event.method()) {</span>
+<span class="source-line-no">357</span><span id="line-357">        case "start":</span>
+<span class="source-line-no">358</span><span id="line-358">            fire(new ModifyVm(vmName, "state", "Running", vmChannel));</span>
+<span class="source-line-no">359</span><span id="line-359">            break;</span>
+<span class="source-line-no">360</span><span id="line-360">        case "stop":</span>
+<span class="source-line-no">361</span><span id="line-361">            fire(new ModifyVm(vmName, "state", "Stopped", vmChannel));</span>
+<span class="source-line-no">362</span><span id="line-362">            break;</span>
+<span class="source-line-no">363</span><span id="line-363">        case "cpus":</span>
+<span class="source-line-no">364</span><span id="line-364">            fire(new ModifyVm(vmName, "currentCpus",</span>
+<span class="source-line-no">365</span><span id="line-365">                new BigDecimal(event.param(1).toString()).toBigInteger(),</span>
+<span class="source-line-no">366</span><span id="line-366">                vmChannel));</span>
+<span class="source-line-no">367</span><span id="line-367">            break;</span>
+<span class="source-line-no">368</span><span id="line-368">        case "ram":</span>
+<span class="source-line-no">369</span><span id="line-369">            fire(new ModifyVm(vmName, "currentRam",</span>
+<span class="source-line-no">370</span><span id="line-370">                new Quantity(new BigDecimal(event.param(1).toString()),</span>
+<span class="source-line-no">371</span><span id="line-371">                    Format.BINARY_SI).toSuffixedString(),</span>
+<span class="source-line-no">372</span><span id="line-372">                vmChannel));</span>
+<span class="source-line-no">373</span><span id="line-373">            break;</span>
+<span class="source-line-no">374</span><span id="line-374">        default:// ignore</span>
+<span class="source-line-no">375</span><span id="line-375">            break;</span>
+<span class="source-line-no">376</span><span id="line-376">        }</span>
+<span class="source-line-no">377</span><span id="line-377">    }</span>
+<span class="source-line-no">378</span><span id="line-378"></span>
+<span class="source-line-no">379</span><span id="line-379">    @Override</span>
+<span class="source-line-no">380</span><span id="line-380">    protected boolean doSetLocale(SetLocale event, ConsoleConnection channel,</span>
+<span class="source-line-no">381</span><span id="line-381">            String conletId) throws Exception {</span>
+<span class="source-line-no">382</span><span id="line-382">        return true;</span>
+<span class="source-line-no">383</span><span id="line-383">    }</span>
+<span class="source-line-no">384</span><span id="line-384"></span>
+<span class="source-line-no">385</span><span id="line-385">    /**</span>
+<span class="source-line-no">386</span><span id="line-386">     * The Class VmsModel.</span>
+<span class="source-line-no">387</span><span id="line-387">     */</span>
+<span class="source-line-no">388</span><span id="line-388">    public class VmsModel extends ConletBaseModel {</span>
+<span class="source-line-no">389</span><span id="line-389"></span>
+<span class="source-line-no">390</span><span id="line-390">        /**</span>
+<span class="source-line-no">391</span><span id="line-391">         * Instantiates a new vms model.</span>
+<span class="source-line-no">392</span><span id="line-392">         *</span>
+<span class="source-line-no">393</span><span id="line-393">         * @param conletId the conlet id</span>
+<span class="source-line-no">394</span><span id="line-394">         */</span>
+<span class="source-line-no">395</span><span id="line-395">        public VmsModel(String conletId) {</span>
+<span class="source-line-no">396</span><span id="line-396">            super(conletId);</span>
+<span class="source-line-no">397</span><span id="line-397">        }</span>
+<span class="source-line-no">398</span><span id="line-398"></span>
+<span class="source-line-no">399</span><span id="line-399">    }</span>
+<span class="source-line-no">400</span><span id="line-400">}</span>
 
 
 
