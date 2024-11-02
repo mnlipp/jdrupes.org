@@ -198,7 +198,7 @@
 <span class="source-line-no">184</span><span id="line-184">        "PMD.ConfusingArgumentToVarargsMethod" })</span>
 <span class="source-line-no">185</span><span id="line-185">    public void onVmDefChanged(VmDefChanged event, VmChannel channel)</span>
 <span class="source-line-no">186</span><span id="line-186">            throws IOException {</span>
-<span class="source-line-no">187</span><span id="line-187">        var vmName = event.vmModel().getMetadata().getName();</span>
+<span class="source-line-no">187</span><span id="line-187">        var vmName = event.vmDefinition().getMetadata().getName();</span>
 <span class="source-line-no">188</span><span id="line-188">        if (event.type() == K8sObserver.ResponseType.DELETED) {</span>
 <span class="source-line-no">189</span><span id="line-189">            channelTracker.remove(vmName);</span>
 <span class="source-line-no">190</span><span id="line-190">            for (var entry : conletIdsByConsoleConnection().entrySet()) {</span>
@@ -210,7 +210,7 @@
 <span class="source-line-no">196</span><span id="line-196">        } else {</span>
 <span class="source-line-no">197</span><span id="line-197">            var gson = channel.client().getJSON().getGson();</span>
 <span class="source-line-no">198</span><span id="line-198">            var vmDef = new VmDefinitionModel(gson,</span>
-<span class="source-line-no">199</span><span id="line-199">                cleanup(event.vmModel().data()));</span>
+<span class="source-line-no">199</span><span id="line-199">                cleanup(event.vmDefinition().data()));</span>
 <span class="source-line-no">200</span><span id="line-200">            channelTracker.put(vmName, channel, vmDef);</span>
 <span class="source-line-no">201</span><span id="line-201">            var def = gson.fromJson(vmDef.data(), Object.class);</span>
 <span class="source-line-no">202</span><span id="line-202">            for (var entry : conletIdsByConsoleConnection().entrySet()) {</span>
