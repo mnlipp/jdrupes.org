@@ -205,14 +205,14 @@
 <span class="source-line-no">191</span><span id="line-191">        // This results in pod information being shown for a stopped</span>
 <span class="source-line-no">192</span><span id="line-192">        // VM which is irritating. So check condition first.</span>
 <span class="source-line-no">193</span><span id="line-193">        @SuppressWarnings("PMD.LambdaCanBeMethodReference")</span>
-<span class="source-line-no">194</span><span id="line-194">        var isRunning = DataPath</span>
-<span class="source-line-no">195</span><span id="line-195">            .&lt;List&lt;Map&lt;String, Object&gt;&gt;&gt; get(vmDef.status(), "conditions")</span>
-<span class="source-line-no">196</span><span id="line-196">            .orElse(Collections.emptyList()).stream()</span>
-<span class="source-line-no">197</span><span id="line-197">            .filter(cond -&gt; DataPath.get(cond, "type")</span>
-<span class="source-line-no">198</span><span id="line-198">                .map(t -&gt; "Running".equals(t)).orElse(false))</span>
-<span class="source-line-no">199</span><span id="line-199">            .findFirst().map(cond -&gt; DataPath.get(cond, "status")</span>
-<span class="source-line-no">200</span><span id="line-200">                .map(s -&gt; "True".equals(s)).orElse(false))</span>
-<span class="source-line-no">201</span><span id="line-201">            .orElse(false);</span>
+<span class="source-line-no">194</span><span id="line-194">        var isRunning</span>
+<span class="source-line-no">195</span><span id="line-195">            = vmDef.&lt;List&lt;Map&lt;String, Object&gt;&gt;&gt; fromStatus("conditions")</span>
+<span class="source-line-no">196</span><span id="line-196">                .orElse(Collections.emptyList()).stream()</span>
+<span class="source-line-no">197</span><span id="line-197">                .filter(cond -&gt; DataPath.get(cond, "type")</span>
+<span class="source-line-no">198</span><span id="line-198">                    .map(t -&gt; "Running".equals(t)).orElse(false))</span>
+<span class="source-line-no">199</span><span id="line-199">                .findFirst().map(cond -&gt; DataPath.get(cond, "status")</span>
+<span class="source-line-no">200</span><span id="line-200">                    .map(s -&gt; "True".equals(s)).orElse(false))</span>
+<span class="source-line-no">201</span><span id="line-201">                .orElse(false);</span>
 <span class="source-line-no">202</span><span id="line-202">        if (!isRunning) {</span>
 <span class="source-line-no">203</span><span id="line-203">            return;</span>
 <span class="source-line-no">204</span><span id="line-204">        }</span>
