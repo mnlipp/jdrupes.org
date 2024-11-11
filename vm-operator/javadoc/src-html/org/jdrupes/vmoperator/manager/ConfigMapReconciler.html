@@ -102,7 +102,7 @@
 <span class="source-line-no">088</span><span id="line-88">            new Yaml(new SafeConstructor(new LoaderOptions())), out.toString());</span>
 <span class="source-line-no">089</span><span id="line-89"></span>
 <span class="source-line-no">090</span><span id="line-90">        // Maybe override logging.properties</span>
-<span class="source-line-no">091</span><span id="line-91">        DataPath.&lt;String&gt; get(model, "cr", "spec", "logging.properties")</span>
+<span class="source-line-no">091</span><span id="line-91">        DataPath.&lt;String&gt; get(model, "cr", "spec", "loggingProperties")</span>
 <span class="source-line-no">092</span><span id="line-92">            .ifPresent(props -&gt; {</span>
 <span class="source-line-no">093</span><span id="line-93">                GsonPtr.to(mapDef.getRaw()).get(JsonObject.class, "data")</span>
 <span class="source-line-no">094</span><span id="line-94">                    .get().addProperty("logging.properties", props);</span>
