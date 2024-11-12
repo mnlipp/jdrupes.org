@@ -88,79 +88,86 @@
 <span class="source-line-no">074</span><span id="line-74">    public Map&lt;String, Object&gt; reconcile(Map&lt;String, Object&gt; model,</span>
 <span class="source-line-no">075</span><span id="line-75">            VmChannel channel)</span>
 <span class="source-line-no">076</span><span id="line-76">            throws IOException, TemplateException, ApiException {</span>
-<span class="source-line-no">077</span><span id="line-77">        // Get API</span>
-<span class="source-line-no">078</span><span id="line-78">        DynamicKubernetesApi cmApi = new DynamicKubernetesApi("", "v1",</span>
-<span class="source-line-no">079</span><span id="line-79">            "configmaps", channel.client());</span>
-<span class="source-line-no">080</span><span id="line-80"></span>
-<span class="source-line-no">081</span><span id="line-81">        // Combine template and data and parse result</span>
-<span class="source-line-no">082</span><span id="line-82">        var fmTemplate = fmConfig.getTemplate("runnerConfig.ftl.yaml");</span>
-<span class="source-line-no">083</span><span id="line-83">        StringWriter out = new StringWriter();</span>
-<span class="source-line-no">084</span><span id="line-84">        fmTemplate.process(model, out);</span>
-<span class="source-line-no">085</span><span id="line-85">        // Avoid Yaml.load due to</span>
-<span class="source-line-no">086</span><span id="line-86">        // https://github.com/kubernetes-client/java/issues/2741</span>
-<span class="source-line-no">087</span><span id="line-87">        var mapDef = Dynamics.newFromYaml(</span>
-<span class="source-line-no">088</span><span id="line-88">            new Yaml(new SafeConstructor(new LoaderOptions())), out.toString());</span>
-<span class="source-line-no">089</span><span id="line-89"></span>
-<span class="source-line-no">090</span><span id="line-90">        // Maybe override logging.properties</span>
-<span class="source-line-no">091</span><span id="line-91">        DataPath.&lt;String&gt; get(model, "cr", "spec", "loggingProperties")</span>
-<span class="source-line-no">092</span><span id="line-92">            .ifPresent(props -&gt; {</span>
-<span class="source-line-no">093</span><span id="line-93">                GsonPtr.to(mapDef.getRaw()).get(JsonObject.class, "data")</span>
-<span class="source-line-no">094</span><span id="line-94">                    .get().addProperty("logging.properties", props);</span>
-<span class="source-line-no">095</span><span id="line-95">            });</span>
-<span class="source-line-no">096</span><span id="line-96"></span>
-<span class="source-line-no">097</span><span id="line-97">        // Apply and maybe force pod update</span>
-<span class="source-line-no">098</span><span id="line-98">        var newState = K8s.apply(cmApi, mapDef, mapDef.getRaw().toString());</span>
-<span class="source-line-no">099</span><span id="line-99">        maybeForceUpdate(channel.client(), newState);</span>
-<span class="source-line-no">100</span><span id="line-100">        @SuppressWarnings("unchecked")</span>
-<span class="source-line-no">101</span><span id="line-101">        var res = (Map&lt;String, Object&gt;) channel.client().getJSON().getGson()</span>
-<span class="source-line-no">102</span><span id="line-102">            .fromJson(newState.getRaw(), Map.class);</span>
-<span class="source-line-no">103</span><span id="line-103">        return res;</span>
-<span class="source-line-no">104</span><span id="line-104">    }</span>
-<span class="source-line-no">105</span><span id="line-105"></span>
-<span class="source-line-no">106</span><span id="line-106">    /**</span>
-<span class="source-line-no">107</span><span id="line-107">     * Triggers update of config map mounted in pod</span>
-<span class="source-line-no">108</span><span id="line-108">     * See https://ahmet.im/blog/kubernetes-secret-volumes-delay/</span>
-<span class="source-line-no">109</span><span id="line-109">     * @param client </span>
-<span class="source-line-no">110</span><span id="line-110">     * </span>
-<span class="source-line-no">111</span><span id="line-111">     * @param newCm</span>
-<span class="source-line-no">112</span><span id="line-112">     */</span>
-<span class="source-line-no">113</span><span id="line-113">    private void maybeForceUpdate(ApiClient client,</span>
-<span class="source-line-no">114</span><span id="line-114">            DynamicKubernetesObject newCm) {</span>
-<span class="source-line-no">115</span><span id="line-115">        ListOptions listOpts = new ListOptions();</span>
-<span class="source-line-no">116</span><span id="line-116">        listOpts.setLabelSelector(</span>
-<span class="source-line-no">117</span><span id="line-117">            "app.kubernetes.io/managed-by=" + VM_OP_NAME + ","</span>
-<span class="source-line-no">118</span><span id="line-118">                + "app.kubernetes.io/name=" + APP_NAME + ","</span>
-<span class="source-line-no">119</span><span id="line-119">                + "app.kubernetes.io/instance=" + newCm.getMetadata()</span>
-<span class="source-line-no">120</span><span id="line-120">                    .getLabels().get("app.kubernetes.io/instance"));</span>
-<span class="source-line-no">121</span><span id="line-121">        // Get pod, selected by label</span>
-<span class="source-line-no">122</span><span id="line-122">        var podApi = new DynamicKubernetesApi("", "v1", "pods", client);</span>
-<span class="source-line-no">123</span><span id="line-123">        var pods = podApi</span>
-<span class="source-line-no">124</span><span id="line-124">            .list(newCm.getMetadata().getNamespace(), listOpts).getObject();</span>
-<span class="source-line-no">125</span><span id="line-125"></span>
-<span class="source-line-no">126</span><span id="line-126">        // If the VM is being created, the pod may not exist yet.</span>
-<span class="source-line-no">127</span><span id="line-127">        if (pods == null || pods.getItems().isEmpty()) {</span>
-<span class="source-line-no">128</span><span id="line-128">            return;</span>
-<span class="source-line-no">129</span><span id="line-129">        }</span>
-<span class="source-line-no">130</span><span id="line-130">        var pod = pods.getItems().get(0);</span>
-<span class="source-line-no">131</span><span id="line-131"></span>
-<span class="source-line-no">132</span><span id="line-132">        // Patch pod annotation</span>
-<span class="source-line-no">133</span><span id="line-133">        PatchOptions patchOpts = new PatchOptions();</span>
-<span class="source-line-no">134</span><span id="line-134">        patchOpts.setFieldManager("kubernetes-java-kubectl-apply");</span>
-<span class="source-line-no">135</span><span id="line-135">        var podMeta = pod.getMetadata();</span>
-<span class="source-line-no">136</span><span id="line-136">        var res = podApi.patch(podMeta.getNamespace(), podMeta.getName(),</span>
-<span class="source-line-no">137</span><span id="line-137">            V1Patch.PATCH_FORMAT_JSON_PATCH,</span>
-<span class="source-line-no">138</span><span id="line-138">            new V1Patch("[{\"op\": \"replace\", \"path\": "</span>
-<span class="source-line-no">139</span><span id="line-139">                + "\"/metadata/annotations/vmrunner.jdrupes.org~1cmVersion\", "</span>
-<span class="source-line-no">140</span><span id="line-140">                + "\"value\": \"" + newCm.getMetadata().getResourceVersion()</span>
-<span class="source-line-no">141</span><span id="line-141">                + "\"}]"),</span>
-<span class="source-line-no">142</span><span id="line-142">            patchOpts);</span>
-<span class="source-line-no">143</span><span id="line-143">        if (!res.isSuccess()) {</span>
-<span class="source-line-no">144</span><span id="line-144">            logger.warning(</span>
-<span class="source-line-no">145</span><span id="line-145">                () -&gt; "Cannot patch pod annotations: " + res.getStatus());</span>
-<span class="source-line-no">146</span><span id="line-146">        }</span>
-<span class="source-line-no">147</span><span id="line-147">    }</span>
-<span class="source-line-no">148</span><span id="line-148"></span>
-<span class="source-line-no">149</span><span id="line-149">}</span>
+<span class="source-line-no">077</span><span id="line-77">        // Combine template and data and parse result</span>
+<span class="source-line-no">078</span><span id="line-78">        var fmTemplate = fmConfig.getTemplate("runnerConfig.ftl.yaml");</span>
+<span class="source-line-no">079</span><span id="line-79">        StringWriter out = new StringWriter();</span>
+<span class="source-line-no">080</span><span id="line-80">        fmTemplate.process(model, out);</span>
+<span class="source-line-no">081</span><span id="line-81">        // Avoid Yaml.load due to</span>
+<span class="source-line-no">082</span><span id="line-82">        // https://github.com/kubernetes-client/java/issues/2741</span>
+<span class="source-line-no">083</span><span id="line-83">        var mapDef = Dynamics.newFromYaml(</span>
+<span class="source-line-no">084</span><span id="line-84">            new Yaml(new SafeConstructor(new LoaderOptions())), out.toString());</span>
+<span class="source-line-no">085</span><span id="line-85"></span>
+<span class="source-line-no">086</span><span id="line-86">        // Maybe override logging.properties from reconciler configuration.</span>
+<span class="source-line-no">087</span><span id="line-87">        DataPath.&lt;String&gt; get(model, "reconciler", "loggingProperties")</span>
+<span class="source-line-no">088</span><span id="line-88">            .ifPresent(props -&gt; {</span>
+<span class="source-line-no">089</span><span id="line-89">                GsonPtr.to(mapDef.getRaw()).get(JsonObject.class, "data")</span>
+<span class="source-line-no">090</span><span id="line-90">                    .get().addProperty("logging.properties", props);</span>
+<span class="source-line-no">091</span><span id="line-91">            });</span>
+<span class="source-line-no">092</span><span id="line-92"></span>
+<span class="source-line-no">093</span><span id="line-93">        // Maybe override logging.properties from VM definition.</span>
+<span class="source-line-no">094</span><span id="line-94">        DataPath.&lt;String&gt; get(model, "cr", "spec", "loggingProperties")</span>
+<span class="source-line-no">095</span><span id="line-95">            .ifPresent(props -&gt; {</span>
+<span class="source-line-no">096</span><span id="line-96">                GsonPtr.to(mapDef.getRaw()).get(JsonObject.class, "data")</span>
+<span class="source-line-no">097</span><span id="line-97">                    .get().addProperty("logging.properties", props);</span>
+<span class="source-line-no">098</span><span id="line-98">            });</span>
+<span class="source-line-no">099</span><span id="line-99"></span>
+<span class="source-line-no">100</span><span id="line-100">        // Get API</span>
+<span class="source-line-no">101</span><span id="line-101">        DynamicKubernetesApi cmApi = new DynamicKubernetesApi("", "v1",</span>
+<span class="source-line-no">102</span><span id="line-102">            "configmaps", channel.client());</span>
+<span class="source-line-no">103</span><span id="line-103"></span>
+<span class="source-line-no">104</span><span id="line-104">        // Apply and maybe force pod update</span>
+<span class="source-line-no">105</span><span id="line-105">        var newState = K8s.apply(cmApi, mapDef, mapDef.getRaw().toString());</span>
+<span class="source-line-no">106</span><span id="line-106">        maybeForceUpdate(channel.client(), newState);</span>
+<span class="source-line-no">107</span><span id="line-107">        @SuppressWarnings("unchecked")</span>
+<span class="source-line-no">108</span><span id="line-108">        var res = (Map&lt;String, Object&gt;) channel.client().getJSON().getGson()</span>
+<span class="source-line-no">109</span><span id="line-109">            .fromJson(newState.getRaw(), Map.class);</span>
+<span class="source-line-no">110</span><span id="line-110">        return res;</span>
+<span class="source-line-no">111</span><span id="line-111">    }</span>
+<span class="source-line-no">112</span><span id="line-112"></span>
+<span class="source-line-no">113</span><span id="line-113">    /**</span>
+<span class="source-line-no">114</span><span id="line-114">     * Triggers update of config map mounted in pod</span>
+<span class="source-line-no">115</span><span id="line-115">     * See https://ahmet.im/blog/kubernetes-secret-volumes-delay/</span>
+<span class="source-line-no">116</span><span id="line-116">     * @param client </span>
+<span class="source-line-no">117</span><span id="line-117">     * </span>
+<span class="source-line-no">118</span><span id="line-118">     * @param newCm</span>
+<span class="source-line-no">119</span><span id="line-119">     */</span>
+<span class="source-line-no">120</span><span id="line-120">    private void maybeForceUpdate(ApiClient client,</span>
+<span class="source-line-no">121</span><span id="line-121">            DynamicKubernetesObject newCm) {</span>
+<span class="source-line-no">122</span><span id="line-122">        ListOptions listOpts = new ListOptions();</span>
+<span class="source-line-no">123</span><span id="line-123">        listOpts.setLabelSelector(</span>
+<span class="source-line-no">124</span><span id="line-124">            "app.kubernetes.io/managed-by=" + VM_OP_NAME + ","</span>
+<span class="source-line-no">125</span><span id="line-125">                + "app.kubernetes.io/name=" + APP_NAME + ","</span>
+<span class="source-line-no">126</span><span id="line-126">                + "app.kubernetes.io/instance=" + newCm.getMetadata()</span>
+<span class="source-line-no">127</span><span id="line-127">                    .getLabels().get("app.kubernetes.io/instance"));</span>
+<span class="source-line-no">128</span><span id="line-128">        // Get pod, selected by label</span>
+<span class="source-line-no">129</span><span id="line-129">        var podApi = new DynamicKubernetesApi("", "v1", "pods", client);</span>
+<span class="source-line-no">130</span><span id="line-130">        var pods = podApi</span>
+<span class="source-line-no">131</span><span id="line-131">            .list(newCm.getMetadata().getNamespace(), listOpts).getObject();</span>
+<span class="source-line-no">132</span><span id="line-132"></span>
+<span class="source-line-no">133</span><span id="line-133">        // If the VM is being created, the pod may not exist yet.</span>
+<span class="source-line-no">134</span><span id="line-134">        if (pods == null || pods.getItems().isEmpty()) {</span>
+<span class="source-line-no">135</span><span id="line-135">            return;</span>
+<span class="source-line-no">136</span><span id="line-136">        }</span>
+<span class="source-line-no">137</span><span id="line-137">        var pod = pods.getItems().get(0);</span>
+<span class="source-line-no">138</span><span id="line-138"></span>
+<span class="source-line-no">139</span><span id="line-139">        // Patch pod annotation</span>
+<span class="source-line-no">140</span><span id="line-140">        PatchOptions patchOpts = new PatchOptions();</span>
+<span class="source-line-no">141</span><span id="line-141">        patchOpts.setFieldManager("kubernetes-java-kubectl-apply");</span>
+<span class="source-line-no">142</span><span id="line-142">        var podMeta = pod.getMetadata();</span>
+<span class="source-line-no">143</span><span id="line-143">        var res = podApi.patch(podMeta.getNamespace(), podMeta.getName(),</span>
+<span class="source-line-no">144</span><span id="line-144">            V1Patch.PATCH_FORMAT_JSON_PATCH,</span>
+<span class="source-line-no">145</span><span id="line-145">            new V1Patch("[{\"op\": \"replace\", \"path\": "</span>
+<span class="source-line-no">146</span><span id="line-146">                + "\"/metadata/annotations/vmrunner.jdrupes.org~1cmVersion\", "</span>
+<span class="source-line-no">147</span><span id="line-147">                + "\"value\": \"" + newCm.getMetadata().getResourceVersion()</span>
+<span class="source-line-no">148</span><span id="line-148">                + "\"}]"),</span>
+<span class="source-line-no">149</span><span id="line-149">            patchOpts);</span>
+<span class="source-line-no">150</span><span id="line-150">        if (!res.isSuccess()) {</span>
+<span class="source-line-no">151</span><span id="line-151">            logger.warning(</span>
+<span class="source-line-no">152</span><span id="line-152">                () -&gt; "Cannot patch pod annotations: " + res.getStatus());</span>
+<span class="source-line-no">153</span><span id="line-153">        }</span>
+<span class="source-line-no">154</span><span id="line-154">    }</span>
+<span class="source-line-no">155</span><span id="line-155"></span>
+<span class="source-line-no">156</span><span id="line-156">}</span>
 
 
 
