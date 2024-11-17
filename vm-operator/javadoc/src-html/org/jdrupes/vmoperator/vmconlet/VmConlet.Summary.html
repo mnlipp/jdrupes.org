@@ -343,7 +343,7 @@
 <span class="source-line-no">329</span><span id="line-329">                    .map(r -&gt; Quantity.fromString(r).getNumber().toBigInteger())</span>
 <span class="source-line-no">330</span><span id="line-330">                    .orElse(BigInteger.ZERO));</span>
 <span class="source-line-no">331</span><span id="line-331">            summary.runningVms</span>
-<span class="source-line-no">332</span><span id="line-332">                = vmDef.&lt;List&lt;Map&lt;String, Object&gt;&gt;&gt; fromStatus("conditions")</span>
+<span class="source-line-no">332</span><span id="line-332">                += vmDef.&lt;List&lt;Map&lt;String, Object&gt;&gt;&gt; fromStatus("conditions")</span>
 <span class="source-line-no">333</span><span id="line-333">                    .orElse(Collections.emptyList()).stream()</span>
 <span class="source-line-no">334</span><span id="line-334">                    .filter(cond -&gt; DataPath.get(cond, "type")</span>
 <span class="source-line-no">335</span><span id="line-335">                        .map(t -&gt; "Running".equals(t)).orElse(false)</span>
