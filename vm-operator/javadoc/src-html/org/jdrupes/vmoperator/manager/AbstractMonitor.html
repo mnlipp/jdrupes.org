@@ -260,15 +260,13 @@
 <span class="source-line-no">246</span><span id="line-246">    }</span>
 <span class="source-line-no">247</span><span id="line-247"></span>
 <span class="source-line-no">248</span><span id="line-248">    /**</span>
-<span class="source-line-no">249</span><span id="line-249">     * Handle an observed change. The method is invoked by the observer</span>
-<span class="source-line-no">250</span><span id="line-250">     * thread(s). It is the responsibility of the implementing class to</span>
-<span class="source-line-no">251</span><span id="line-251">     * fire derived events on the appropriate event pipeline.</span>
-<span class="source-line-no">252</span><span id="line-252">     *</span>
-<span class="source-line-no">253</span><span id="line-253">     * @param client the client</span>
-<span class="source-line-no">254</span><span id="line-254">     * @param change the change</span>
-<span class="source-line-no">255</span><span id="line-255">     */</span>
-<span class="source-line-no">256</span><span id="line-256">    protected abstract void handleChange(K8sClient client, Response&lt;O&gt; change);</span>
-<span class="source-line-no">257</span><span id="line-257">}</span>
+<span class="source-line-no">249</span><span id="line-249">     * Handle an observed change.</span>
+<span class="source-line-no">250</span><span id="line-250">     *</span>
+<span class="source-line-no">251</span><span id="line-251">     * @param client the client</span>
+<span class="source-line-no">252</span><span id="line-252">     * @param change the change</span>
+<span class="source-line-no">253</span><span id="line-253">     */</span>
+<span class="source-line-no">254</span><span id="line-254">    protected abstract void handleChange(K8sClient client, Response&lt;O&gt; change);</span>
+<span class="source-line-no">255</span><span id="line-255">}</span>
 
 
 

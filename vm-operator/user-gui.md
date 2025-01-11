@@ -11,7 +11,7 @@ The idea of the user view is to provide an intuitive widget that
 allows the users to access their own VMs and to optionally start
 and stop them.
 
-![VM-Viewer](VmAccess-preview.png)
+![VM-Viewer](VmViewer-preview.png)
 
 The configuration options resulting from this seemingly simple
 requirement are unexpectedly complex.
@@ -62,7 +62,7 @@ objects that either specify a role or a user.
     "/ConsoleWeblet":
       "/WebConsole":
         "/ComponentCollector":
-          "/VmAccess":
+          "/VmViewer":
             syncPreviewsFor:
             - role: user
             - user: test
