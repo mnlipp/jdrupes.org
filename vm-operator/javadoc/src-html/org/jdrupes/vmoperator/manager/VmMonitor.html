@@ -38,210 +38,191 @@
 <span class="source-line-no">024</span><span id="line-24">import io.kubernetes.client.util.generic.options.ListOptions;</span>
 <span class="source-line-no">025</span><span id="line-25">import java.io.IOException;</span>
 <span class="source-line-no">026</span><span id="line-26">import java.util.ArrayList;</span>
-<span class="source-line-no">027</span><span id="line-27">import java.util.Collections;</span>
-<span class="source-line-no">028</span><span id="line-28">import java.util.List;</span>
-<span class="source-line-no">029</span><span id="line-29">import java.util.Map;</span>
-<span class="source-line-no">030</span><span id="line-30">import java.util.Optional;</span>
-<span class="source-line-no">031</span><span id="line-31">import java.util.Set;</span>
-<span class="source-line-no">032</span><span id="line-32">import java.util.logging.Level;</span>
-<span class="source-line-no">033</span><span id="line-33">import java.util.stream.Collectors;</span>
-<span class="source-line-no">034</span><span id="line-34">import static org.jdrupes.vmoperator.common.Constants.VM_OP_GROUP;</span>
-<span class="source-line-no">035</span><span id="line-35">import org.jdrupes.vmoperator.common.K8s;</span>
-<span class="source-line-no">036</span><span id="line-36">import org.jdrupes.vmoperator.common.K8sClient;</span>
-<span class="source-line-no">037</span><span id="line-37">import org.jdrupes.vmoperator.common.K8sDynamicStub;</span>
-<span class="source-line-no">038</span><span id="line-38">import org.jdrupes.vmoperator.common.K8sObserver.ResponseType;</span>
-<span class="source-line-no">039</span><span id="line-39">import org.jdrupes.vmoperator.common.K8sV1ConfigMapStub;</span>
-<span class="source-line-no">040</span><span id="line-40">import org.jdrupes.vmoperator.common.K8sV1PodStub;</span>
-<span class="source-line-no">041</span><span id="line-41">import org.jdrupes.vmoperator.common.K8sV1StatefulSetStub;</span>
-<span class="source-line-no">042</span><span id="line-42">import org.jdrupes.vmoperator.common.VmDefinition;</span>
-<span class="source-line-no">043</span><span id="line-43">import org.jdrupes.vmoperator.common.VmDefinitionModel;</span>
-<span class="source-line-no">044</span><span id="line-44">import org.jdrupes.vmoperator.common.VmDefinitionModels;</span>
-<span class="source-line-no">045</span><span id="line-45">import org.jdrupes.vmoperator.common.VmDefinitionStub;</span>
-<span class="source-line-no">046</span><span id="line-46">import static org.jdrupes.vmoperator.manager.Constants.APP_NAME;</span>
-<span class="source-line-no">047</span><span id="line-47">import static org.jdrupes.vmoperator.manager.Constants.VM_OP_KIND_VM;</span>
-<span class="source-line-no">048</span><span id="line-48">import static org.jdrupes.vmoperator.manager.Constants.VM_OP_NAME;</span>
-<span class="source-line-no">049</span><span id="line-49">import org.jdrupes.vmoperator.manager.events.ChannelManager;</span>
-<span class="source-line-no">050</span><span id="line-50">import org.jdrupes.vmoperator.manager.events.VmChannel;</span>
-<span class="source-line-no">051</span><span id="line-51">import org.jdrupes.vmoperator.manager.events.VmDefChanged;</span>
-<span class="source-line-no">052</span><span id="line-52">import org.jdrupes.vmoperator.util.DataPath;</span>
-<span class="source-line-no">053</span><span id="line-53">import org.jgrapes.core.Channel;</span>
-<span class="source-line-no">054</span><span id="line-54">import org.jgrapes.core.Event;</span>
-<span class="source-line-no">055</span><span id="line-55"></span>
-<span class="source-line-no">056</span><span id="line-56">/**</span>
-<span class="source-line-no">057</span><span id="line-57"> * Watches for changes of VM definitions.</span>
-<span class="source-line-no">058</span><span id="line-58"> */</span>
-<span class="source-line-no">059</span><span id="line-59">@SuppressWarnings({ "PMD.DataflowAnomalyAnalysis", "PMD.ExcessiveImports" })</span>
-<span class="source-line-no">060</span><span id="line-60">public class VmMonitor extends</span>
-<span class="source-line-no">061</span><span id="line-61">        AbstractMonitor&lt;VmDefinitionModel, VmDefinitionModels, VmChannel&gt; {</span>
-<span class="source-line-no">062</span><span id="line-62"></span>
-<span class="source-line-no">063</span><span id="line-63">    private final ChannelManager&lt;String, VmChannel, ?&gt; channelManager;</span>
-<span class="source-line-no">064</span><span id="line-64"></span>
-<span class="source-line-no">065</span><span id="line-65">    /**</span>
-<span class="source-line-no">066</span><span id="line-66">     * Instantiates a new VM definition watcher.</span>
-<span class="source-line-no">067</span><span id="line-67">     *</span>
-<span class="source-line-no">068</span><span id="line-68">     * @param componentChannel the component channel</span>
-<span class="source-line-no">069</span><span id="line-69">     * @param channelManager the channel manager</span>
-<span class="source-line-no">070</span><span id="line-70">     */</span>
-<span class="source-line-no">071</span><span id="line-71">    public VmMonitor(Channel componentChannel,</span>
-<span class="source-line-no">072</span><span id="line-72">            ChannelManager&lt;String, VmChannel, ?&gt; channelManager) {</span>
-<span class="source-line-no">073</span><span id="line-73">        super(componentChannel, VmDefinitionModel.class,</span>
-<span class="source-line-no">074</span><span id="line-74">            VmDefinitionModels.class);</span>
-<span class="source-line-no">075</span><span id="line-75">        this.channelManager = channelManager;</span>
-<span class="source-line-no">076</span><span id="line-76">    }</span>
+<span class="source-line-no">027</span><span id="line-27">import java.util.Optional;</span>
+<span class="source-line-no">028</span><span id="line-28">import java.util.Set;</span>
+<span class="source-line-no">029</span><span id="line-29">import java.util.logging.Level;</span>
+<span class="source-line-no">030</span><span id="line-30">import java.util.stream.Collectors;</span>
+<span class="source-line-no">031</span><span id="line-31">import static org.jdrupes.vmoperator.common.Constants.VM_OP_GROUP;</span>
+<span class="source-line-no">032</span><span id="line-32">import org.jdrupes.vmoperator.common.K8s;</span>
+<span class="source-line-no">033</span><span id="line-33">import org.jdrupes.vmoperator.common.K8sClient;</span>
+<span class="source-line-no">034</span><span id="line-34">import org.jdrupes.vmoperator.common.K8sDynamicStub;</span>
+<span class="source-line-no">035</span><span id="line-35">import org.jdrupes.vmoperator.common.K8sObserver.ResponseType;</span>
+<span class="source-line-no">036</span><span id="line-36">import org.jdrupes.vmoperator.common.K8sV1ConfigMapStub;</span>
+<span class="source-line-no">037</span><span id="line-37">import org.jdrupes.vmoperator.common.K8sV1PodStub;</span>
+<span class="source-line-no">038</span><span id="line-38">import org.jdrupes.vmoperator.common.K8sV1StatefulSetStub;</span>
+<span class="source-line-no">039</span><span id="line-39">import org.jdrupes.vmoperator.common.VmDefinition;</span>
+<span class="source-line-no">040</span><span id="line-40">import org.jdrupes.vmoperator.common.VmDefinitionModel;</span>
+<span class="source-line-no">041</span><span id="line-41">import org.jdrupes.vmoperator.common.VmDefinitionModels;</span>
+<span class="source-line-no">042</span><span id="line-42">import org.jdrupes.vmoperator.common.VmDefinitionStub;</span>
+<span class="source-line-no">043</span><span id="line-43">import static org.jdrupes.vmoperator.manager.Constants.APP_NAME;</span>
+<span class="source-line-no">044</span><span id="line-44">import static org.jdrupes.vmoperator.manager.Constants.VM_OP_KIND_VM;</span>
+<span class="source-line-no">045</span><span id="line-45">import static org.jdrupes.vmoperator.manager.Constants.VM_OP_NAME;</span>
+<span class="source-line-no">046</span><span id="line-46">import org.jdrupes.vmoperator.manager.events.ChannelManager;</span>
+<span class="source-line-no">047</span><span id="line-47">import org.jdrupes.vmoperator.manager.events.VmChannel;</span>
+<span class="source-line-no">048</span><span id="line-48">import org.jdrupes.vmoperator.manager.events.VmDefChanged;</span>
+<span class="source-line-no">049</span><span id="line-49">import org.jgrapes.core.Channel;</span>
+<span class="source-line-no">050</span><span id="line-50">import org.jgrapes.core.Event;</span>
+<span class="source-line-no">051</span><span id="line-51"></span>
+<span class="source-line-no">052</span><span id="line-52">/**</span>
+<span class="source-line-no">053</span><span id="line-53"> * Watches for changes of VM definitions.</span>
+<span class="source-line-no">054</span><span id="line-54"> */</span>
+<span class="source-line-no">055</span><span id="line-55">@SuppressWarnings({ "PMD.DataflowAnomalyAnalysis", "PMD.ExcessiveImports" })</span>
+<span class="source-line-no">056</span><span id="line-56">public class VmMonitor extends</span>
+<span class="source-line-no">057</span><span id="line-57">        AbstractMonitor&lt;VmDefinitionModel, VmDefinitionModels, VmChannel&gt; {</span>
+<span class="source-line-no">058</span><span id="line-58"></span>
+<span class="source-line-no">059</span><span id="line-59">    private final ChannelManager&lt;String, VmChannel, ?&gt; channelManager;</span>
+<span class="source-line-no">060</span><span id="line-60"></span>
+<span class="source-line-no">061</span><span id="line-61">    /**</span>
+<span class="source-line-no">062</span><span id="line-62">     * Instantiates a new VM definition watcher.</span>
+<span class="source-line-no">063</span><span id="line-63">     *</span>
+<span class="source-line-no">064</span><span id="line-64">     * @param componentChannel the component channel</span>
+<span class="source-line-no">065</span><span id="line-65">     * @param channelManager the channel manager</span>
+<span class="source-line-no">066</span><span id="line-66">     */</span>
+<span class="source-line-no">067</span><span id="line-67">    public VmMonitor(Channel componentChannel,</span>
+<span class="source-line-no">068</span><span id="line-68">            ChannelManager&lt;String, VmChannel, ?&gt; channelManager) {</span>
+<span class="source-line-no">069</span><span id="line-69">        super(componentChannel, VmDefinitionModel.class,</span>
+<span class="source-line-no">070</span><span id="line-70">            VmDefinitionModels.class);</span>
+<span class="source-line-no">071</span><span id="line-71">        this.channelManager = channelManager;</span>
+<span class="source-line-no">072</span><span id="line-72">    }</span>
+<span class="source-line-no">073</span><span id="line-73"></span>
+<span class="source-line-no">074</span><span id="line-74">    @Override</span>
+<span class="source-line-no">075</span><span id="line-75">    protected void prepareMonitoring() throws IOException, ApiException {</span>
+<span class="source-line-no">076</span><span id="line-76">        client(new K8sClient());</span>
 <span class="source-line-no">077</span><span id="line-77"></span>
-<span class="source-line-no">078</span><span id="line-78">    @Override</span>
-<span class="source-line-no">079</span><span id="line-79">    protected void prepareMonitoring() throws IOException, ApiException {</span>
-<span class="source-line-no">080</span><span id="line-80">        client(new K8sClient());</span>
-<span class="source-line-no">081</span><span id="line-81"></span>
-<span class="source-line-no">082</span><span id="line-82">        // Get all our API versions</span>
-<span class="source-line-no">083</span><span id="line-83">        var ctx = K8s.context(client(), VM_OP_GROUP, "", VM_OP_KIND_VM);</span>
-<span class="source-line-no">084</span><span id="line-84">        if (ctx.isEmpty()) {</span>
-<span class="source-line-no">085</span><span id="line-85">            logger.severe(() -&gt; "Cannot get CRD context.");</span>
-<span class="source-line-no">086</span><span id="line-86">            return;</span>
-<span class="source-line-no">087</span><span id="line-87">        }</span>
-<span class="source-line-no">088</span><span id="line-88">        context(ctx.get());</span>
+<span class="source-line-no">078</span><span id="line-78">        // Get all our API versions</span>
+<span class="source-line-no">079</span><span id="line-79">        var ctx = K8s.context(client(), VM_OP_GROUP, "", VM_OP_KIND_VM);</span>
+<span class="source-line-no">080</span><span id="line-80">        if (ctx.isEmpty()) {</span>
+<span class="source-line-no">081</span><span id="line-81">            logger.severe(() -&gt; "Cannot get CRD context.");</span>
+<span class="source-line-no">082</span><span id="line-82">            return;</span>
+<span class="source-line-no">083</span><span id="line-83">        }</span>
+<span class="source-line-no">084</span><span id="line-84">        context(ctx.get());</span>
+<span class="source-line-no">085</span><span id="line-85"></span>
+<span class="source-line-no">086</span><span id="line-86">        // Remove left over resources</span>
+<span class="source-line-no">087</span><span id="line-87">        purge();</span>
+<span class="source-line-no">088</span><span id="line-88">    }</span>
 <span class="source-line-no">089</span><span id="line-89"></span>
-<span class="source-line-no">090</span><span id="line-90">        // Remove left over resources</span>
-<span class="source-line-no">091</span><span id="line-91">        purge();</span>
-<span class="source-line-no">092</span><span id="line-92">    }</span>
-<span class="source-line-no">093</span><span id="line-93"></span>
-<span class="source-line-no">094</span><span id="line-94">    @SuppressWarnings("PMD.CognitiveComplexity")</span>
-<span class="source-line-no">095</span><span id="line-95">    private void purge() throws ApiException {</span>
-<span class="source-line-no">096</span><span id="line-96">        // Get existing CRs (VMs)</span>
-<span class="source-line-no">097</span><span id="line-97">        var known = K8sDynamicStub.list(client(), context(), namespace())</span>
-<span class="source-line-no">098</span><span id="line-98">            .stream().map(stub -&gt; stub.name()).collect(Collectors.toSet());</span>
-<span class="source-line-no">099</span><span id="line-99">        ListOptions opts = new ListOptions();</span>
-<span class="source-line-no">100</span><span id="line-100">        opts.setLabelSelector(</span>
-<span class="source-line-no">101</span><span id="line-101">            "app.kubernetes.io/managed-by=" + VM_OP_NAME + ","</span>
-<span class="source-line-no">102</span><span id="line-102">                + "app.kubernetes.io/name=" + APP_NAME);</span>
-<span class="source-line-no">103</span><span id="line-103">        for (var context : Set.of(K8sV1StatefulSetStub.CONTEXT,</span>
-<span class="source-line-no">104</span><span id="line-104">            K8sV1ConfigMapStub.CONTEXT)) {</span>
-<span class="source-line-no">105</span><span id="line-105">            for (var resStub : K8sDynamicStub.list(client(), context,</span>
-<span class="source-line-no">106</span><span id="line-106">                namespace(), opts)) {</span>
-<span class="source-line-no">107</span><span id="line-107">                String instance = resStub.model()</span>
-<span class="source-line-no">108</span><span id="line-108">                    .map(m -&gt; m.metadata().getName()).orElse("(unknown)");</span>
-<span class="source-line-no">109</span><span id="line-109">                if (!known.contains(instance)) {</span>
-<span class="source-line-no">110</span><span id="line-110">                    resStub.delete();</span>
-<span class="source-line-no">111</span><span id="line-111">                }</span>
-<span class="source-line-no">112</span><span id="line-112">            }</span>
-<span class="source-line-no">113</span><span id="line-113">        }</span>
-<span class="source-line-no">114</span><span id="line-114">    }</span>
-<span class="source-line-no">115</span><span id="line-115"></span>
-<span class="source-line-no">116</span><span id="line-116">    @Override</span>
-<span class="source-line-no">117</span><span id="line-117">    protected void handleChange(K8sClient client,</span>
-<span class="source-line-no">118</span><span id="line-118">            Watch.Response&lt;VmDefinitionModel&gt; response) {</span>
-<span class="source-line-no">119</span><span id="line-119">        V1ObjectMeta metadata = response.object.getMetadata();</span>
-<span class="source-line-no">120</span><span id="line-120">        VmChannel channel = channelManager.channelGet(metadata.getName());</span>
-<span class="source-line-no">121</span><span id="line-121"></span>
-<span class="source-line-no">122</span><span id="line-122">        // Remove from channel manager if deleted</span>
-<span class="source-line-no">123</span><span id="line-123">        if (ResponseType.valueOf(response.type) == ResponseType.DELETED) {</span>
-<span class="source-line-no">124</span><span id="line-124">            channelManager.remove(metadata.getName());</span>
-<span class="source-line-no">125</span><span id="line-125">        }</span>
-<span class="source-line-no">126</span><span id="line-126"></span>
-<span class="source-line-no">127</span><span id="line-127">        // Get full definition and associate with channel as backup</span>
-<span class="source-line-no">128</span><span id="line-128">        var vmModel = response.object;</span>
-<span class="source-line-no">129</span><span id="line-129">        if (vmModel.data() == null) {</span>
-<span class="source-line-no">130</span><span id="line-130">            // ADDED event does not provide data, see</span>
-<span class="source-line-no">131</span><span id="line-131">            // https://github.com/kubernetes-client/java/issues/3215</span>
-<span class="source-line-no">132</span><span id="line-132">            vmModel = getModel(client, vmModel);</span>
-<span class="source-line-no">133</span><span id="line-133">        }</span>
-<span class="source-line-no">134</span><span id="line-134">        VmDefinition vmDef = null;</span>
-<span class="source-line-no">135</span><span id="line-135">        if (vmModel.data() != null) {</span>
-<span class="source-line-no">136</span><span id="line-136">            // New data, augment and save</span>
-<span class="source-line-no">137</span><span id="line-137">            vmDef = client.getJSON().getGson().fromJson(vmModel.data(),</span>
-<span class="source-line-no">138</span><span id="line-138">                VmDefinition.class);</span>
-<span class="source-line-no">139</span><span id="line-139">            addDynamicData(channel.client(), vmDef, channel.vmDefinition());</span>
-<span class="source-line-no">140</span><span id="line-140">            channel.setVmDefinition(vmDef);</span>
+<span class="source-line-no">090</span><span id="line-90">    @SuppressWarnings("PMD.CognitiveComplexity")</span>
+<span class="source-line-no">091</span><span id="line-91">    private void purge() throws ApiException {</span>
+<span class="source-line-no">092</span><span id="line-92">        // Get existing CRs (VMs)</span>
+<span class="source-line-no">093</span><span id="line-93">        var known = K8sDynamicStub.list(client(), context(), namespace())</span>
+<span class="source-line-no">094</span><span id="line-94">            .stream().map(stub -&gt; stub.name()).collect(Collectors.toSet());</span>
+<span class="source-line-no">095</span><span id="line-95">        ListOptions opts = new ListOptions();</span>
+<span class="source-line-no">096</span><span id="line-96">        opts.setLabelSelector(</span>
+<span class="source-line-no">097</span><span id="line-97">            "app.kubernetes.io/managed-by=" + VM_OP_NAME + ","</span>
+<span class="source-line-no">098</span><span id="line-98">                + "app.kubernetes.io/name=" + APP_NAME);</span>
+<span class="source-line-no">099</span><span id="line-99">        for (var context : Set.of(K8sV1StatefulSetStub.CONTEXT,</span>
+<span class="source-line-no">100</span><span id="line-100">            K8sV1ConfigMapStub.CONTEXT)) {</span>
+<span class="source-line-no">101</span><span id="line-101">            for (var resStub : K8sDynamicStub.list(client(), context,</span>
+<span class="source-line-no">102</span><span id="line-102">                namespace(), opts)) {</span>
+<span class="source-line-no">103</span><span id="line-103">                String instance = resStub.model()</span>
+<span class="source-line-no">104</span><span id="line-104">                    .map(m -&gt; m.metadata().getName()).orElse("(unknown)");</span>
+<span class="source-line-no">105</span><span id="line-105">                if (!known.contains(instance)) {</span>
+<span class="source-line-no">106</span><span id="line-106">                    resStub.delete();</span>
+<span class="source-line-no">107</span><span id="line-107">                }</span>
+<span class="source-line-no">108</span><span id="line-108">            }</span>
+<span class="source-line-no">109</span><span id="line-109">        }</span>
+<span class="source-line-no">110</span><span id="line-110">    }</span>
+<span class="source-line-no">111</span><span id="line-111"></span>
+<span class="source-line-no">112</span><span id="line-112">    @Override</span>
+<span class="source-line-no">113</span><span id="line-113">    protected void handleChange(K8sClient client,</span>
+<span class="source-line-no">114</span><span id="line-114">            Watch.Response&lt;VmDefinitionModel&gt; response) {</span>
+<span class="source-line-no">115</span><span id="line-115">        V1ObjectMeta metadata = response.object.getMetadata();</span>
+<span class="source-line-no">116</span><span id="line-116">        VmChannel channel = channelManager.channelGet(metadata.getName());</span>
+<span class="source-line-no">117</span><span id="line-117"></span>
+<span class="source-line-no">118</span><span id="line-118">        // Get full definition and associate with channel as backup</span>
+<span class="source-line-no">119</span><span id="line-119">        var vmModel = response.object;</span>
+<span class="source-line-no">120</span><span id="line-120">        if (vmModel.data() == null) {</span>
+<span class="source-line-no">121</span><span id="line-121">            // ADDED event does not provide data, see</span>
+<span class="source-line-no">122</span><span id="line-122">            // https://github.com/kubernetes-client/java/issues/3215</span>
+<span class="source-line-no">123</span><span id="line-123">            vmModel = getModel(client, vmModel);</span>
+<span class="source-line-no">124</span><span id="line-124">        }</span>
+<span class="source-line-no">125</span><span id="line-125">        VmDefinition vmDef = null;</span>
+<span class="source-line-no">126</span><span id="line-126">        if (vmModel.data() != null) {</span>
+<span class="source-line-no">127</span><span id="line-127">            // New data, augment and save</span>
+<span class="source-line-no">128</span><span id="line-128">            vmDef = client.getJSON().getGson().fromJson(vmModel.data(),</span>
+<span class="source-line-no">129</span><span id="line-129">                VmDefinition.class);</span>
+<span class="source-line-no">130</span><span id="line-130">            addDynamicData(channel.client(), vmDef, channel.vmDefinition());</span>
+<span class="source-line-no">131</span><span id="line-131">            channel.setVmDefinition(vmDef);</span>
+<span class="source-line-no">132</span><span id="line-132">        }</span>
+<span class="source-line-no">133</span><span id="line-133">        if (vmDef == null) {</span>
+<span class="source-line-no">134</span><span id="line-134">            // Reuse cached (e.g. if deleted)</span>
+<span class="source-line-no">135</span><span id="line-135">            vmDef = channel.vmDefinition();</span>
+<span class="source-line-no">136</span><span id="line-136">        }</span>
+<span class="source-line-no">137</span><span id="line-137">        if (vmDef == null) {</span>
+<span class="source-line-no">138</span><span id="line-138">            logger.warning(() -&gt; "Cannot get defintion for "</span>
+<span class="source-line-no">139</span><span id="line-139">                + response.object.getMetadata());</span>
+<span class="source-line-no">140</span><span id="line-140">            return;</span>
 <span class="source-line-no">141</span><span id="line-141">        }</span>
-<span class="source-line-no">142</span><span id="line-142">        if (vmDef == null) {</span>
-<span class="source-line-no">143</span><span id="line-143">            // Reuse cached (e.g. if deleted)</span>
-<span class="source-line-no">144</span><span id="line-144">            vmDef = channel.vmDefinition();</span>
-<span class="source-line-no">145</span><span id="line-145">        }</span>
-<span class="source-line-no">146</span><span id="line-146">        if (vmDef == null) {</span>
-<span class="source-line-no">147</span><span id="line-147">            logger.warning(() -&gt; "Cannot get defintion for "</span>
-<span class="source-line-no">148</span><span id="line-148">                + response.object.getMetadata());</span>
-<span class="source-line-no">149</span><span id="line-149">            return;</span>
-<span class="source-line-no">150</span><span id="line-150">        }</span>
-<span class="source-line-no">151</span><span id="line-151"></span>
-<span class="source-line-no">152</span><span id="line-152">        // Create and fire changed event. Remove channel from channel</span>
-<span class="source-line-no">153</span><span id="line-153">        // manager on completion.</span>
-<span class="source-line-no">154</span><span id="line-154">        channel.pipeline()</span>
-<span class="source-line-no">155</span><span id="line-155">            .fire(Event.onCompletion(</span>
-<span class="source-line-no">156</span><span id="line-156">                new VmDefChanged(ResponseType.valueOf(response.type),</span>
-<span class="source-line-no">157</span><span id="line-157">                    channel.setGeneration(response.object.getMetadata()</span>
-<span class="source-line-no">158</span><span id="line-158">                        .getGeneration()),</span>
-<span class="source-line-no">159</span><span id="line-159">                    vmDef),</span>
-<span class="source-line-no">160</span><span id="line-160">                e -&gt; {</span>
-<span class="source-line-no">161</span><span id="line-161">                    if (e.type() == ResponseType.DELETED) {</span>
-<span class="source-line-no">162</span><span id="line-162">                        channelManager.remove(e.vmDefinition().name());</span>
-<span class="source-line-no">163</span><span id="line-163">                    }</span>
-<span class="source-line-no">164</span><span id="line-164">                }), channel);</span>
+<span class="source-line-no">142</span><span id="line-142"></span>
+<span class="source-line-no">143</span><span id="line-143">        // Create and fire changed event. Remove channel from channel</span>
+<span class="source-line-no">144</span><span id="line-144">        // manager on completion.</span>
+<span class="source-line-no">145</span><span id="line-145">        VmDefChanged chgEvt</span>
+<span class="source-line-no">146</span><span id="line-146">            = new VmDefChanged(ResponseType.valueOf(response.type),</span>
+<span class="source-line-no">147</span><span id="line-147">                channel.setGeneration(response.object.getMetadata()</span>
+<span class="source-line-no">148</span><span id="line-148">                    .getGeneration()),</span>
+<span class="source-line-no">149</span><span id="line-149">                vmDef);</span>
+<span class="source-line-no">150</span><span id="line-150">        if (ResponseType.valueOf(response.type) == ResponseType.DELETED) {</span>
+<span class="source-line-no">151</span><span id="line-151">            chgEvt = Event.onCompletion(chgEvt,</span>
+<span class="source-line-no">152</span><span id="line-152">                e -&gt; channelManager.remove(e.vmDefinition().name()));</span>
+<span class="source-line-no">153</span><span id="line-153">        }</span>
+<span class="source-line-no">154</span><span id="line-154">        channel.pipeline().fire(chgEvt, channel);</span>
+<span class="source-line-no">155</span><span id="line-155">    }</span>
+<span class="source-line-no">156</span><span id="line-156"></span>
+<span class="source-line-no">157</span><span id="line-157">    private VmDefinitionModel getModel(K8sClient client,</span>
+<span class="source-line-no">158</span><span id="line-158">            VmDefinitionModel vmDef) {</span>
+<span class="source-line-no">159</span><span id="line-159">        try {</span>
+<span class="source-line-no">160</span><span id="line-160">            return VmDefinitionStub.get(client, context(), namespace(),</span>
+<span class="source-line-no">161</span><span id="line-161">                vmDef.metadata().getName()).model().orElse(null);</span>
+<span class="source-line-no">162</span><span id="line-162">        } catch (ApiException e) {</span>
+<span class="source-line-no">163</span><span id="line-163">            return null;</span>
+<span class="source-line-no">164</span><span id="line-164">        }</span>
 <span class="source-line-no">165</span><span id="line-165">    }</span>
 <span class="source-line-no">166</span><span id="line-166"></span>
-<span class="source-line-no">167</span><span id="line-167">    private VmDefinitionModel getModel(K8sClient client,</span>
-<span class="source-line-no">168</span><span id="line-168">            VmDefinitionModel vmDef) {</span>
-<span class="source-line-no">169</span><span id="line-169">        try {</span>
-<span class="source-line-no">170</span><span id="line-170">            return VmDefinitionStub.get(client, context(), namespace(),</span>
-<span class="source-line-no">171</span><span id="line-171">                vmDef.metadata().getName()).model().orElse(null);</span>
-<span class="source-line-no">172</span><span id="line-172">        } catch (ApiException e) {</span>
-<span class="source-line-no">173</span><span id="line-173">            return null;</span>
-<span class="source-line-no">174</span><span id="line-174">        }</span>
-<span class="source-line-no">175</span><span id="line-175">    }</span>
-<span class="source-line-no">176</span><span id="line-176"></span>
-<span class="source-line-no">177</span><span id="line-177">    @SuppressWarnings("PMD.AvoidDuplicateLiterals")</span>
-<span class="source-line-no">178</span><span id="line-178">    private void addDynamicData(K8sClient client, VmDefinition vmDef,</span>
-<span class="source-line-no">179</span><span id="line-179">            VmDefinition prevState) {</span>
-<span class="source-line-no">180</span><span id="line-180">        // Maintain (or initialize) the resetCount</span>
-<span class="source-line-no">181</span><span id="line-181">        vmDef.extra("resetCount",</span>
-<span class="source-line-no">182</span><span id="line-182">            Optional.ofNullable(prevState).map(d -&gt; d.extra("resetCount"))</span>
-<span class="source-line-no">183</span><span id="line-183">                .orElse(0L));</span>
-<span class="source-line-no">184</span><span id="line-184"></span>
-<span class="source-line-no">185</span><span id="line-185">        // Node information</span>
-<span class="source-line-no">186</span><span id="line-186">        // Add defaults in case the VM is not running</span>
-<span class="source-line-no">187</span><span id="line-187">        vmDef.extra("nodeName", "");</span>
-<span class="source-line-no">188</span><span id="line-188">        vmDef.extra("nodeAddress", "");</span>
-<span class="source-line-no">189</span><span id="line-189"></span>
-<span class="source-line-no">190</span><span id="line-190">        // VM definition status changes before the pod terminates.</span>
-<span class="source-line-no">191</span><span id="line-191">        // This results in pod information being shown for a stopped</span>
-<span class="source-line-no">192</span><span id="line-192">        // VM which is irritating. So check condition first.</span>
-<span class="source-line-no">193</span><span id="line-193">        @SuppressWarnings("PMD.LambdaCanBeMethodReference")</span>
-<span class="source-line-no">194</span><span id="line-194">        var isRunning</span>
-<span class="source-line-no">195</span><span id="line-195">            = vmDef.&lt;List&lt;Map&lt;String, Object&gt;&gt;&gt; fromStatus("conditions")</span>
-<span class="source-line-no">196</span><span id="line-196">                .orElse(Collections.emptyList()).stream()</span>
-<span class="source-line-no">197</span><span id="line-197">                .filter(cond -&gt; DataPath.get(cond, "type")</span>
-<span class="source-line-no">198</span><span id="line-198">                    .map(t -&gt; "Running".equals(t)).orElse(false))</span>
-<span class="source-line-no">199</span><span id="line-199">                .findFirst().map(cond -&gt; DataPath.get(cond, "status")</span>
-<span class="source-line-no">200</span><span id="line-200">                    .map(s -&gt; "True".equals(s)).orElse(false))</span>
-<span class="source-line-no">201</span><span id="line-201">                .orElse(false);</span>
-<span class="source-line-no">202</span><span id="line-202">        if (!isRunning) {</span>
-<span class="source-line-no">203</span><span id="line-203">            return;</span>
-<span class="source-line-no">204</span><span id="line-204">        }</span>
-<span class="source-line-no">205</span><span id="line-205">        var podSearch = new ListOptions();</span>
-<span class="source-line-no">206</span><span id="line-206">        podSearch.setLabelSelector("app.kubernetes.io/name=" + APP_NAME</span>
-<span class="source-line-no">207</span><span id="line-207">            + ",app.kubernetes.io/component=" + APP_NAME</span>
-<span class="source-line-no">208</span><span id="line-208">            + ",app.kubernetes.io/instance=" + vmDef.name());</span>
-<span class="source-line-no">209</span><span id="line-209">        try {</span>
-<span class="source-line-no">210</span><span id="line-210">            var podList</span>
-<span class="source-line-no">211</span><span id="line-211">                = K8sV1PodStub.list(client, namespace(), podSearch);</span>
-<span class="source-line-no">212</span><span id="line-212">            for (var podStub : podList) {</span>
-<span class="source-line-no">213</span><span id="line-213">                var nodeName = podStub.model().get().getSpec().getNodeName();</span>
-<span class="source-line-no">214</span><span id="line-214">                vmDef.extra("nodeName", nodeName);</span>
-<span class="source-line-no">215</span><span id="line-215">                logger.fine(() -&gt; "Added node name " + nodeName</span>
-<span class="source-line-no">216</span><span id="line-216">                    + " to VM info for " + vmDef.name());</span>
-<span class="source-line-no">217</span><span id="line-217">                @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")</span>
-<span class="source-line-no">218</span><span id="line-218">                var addrs = new ArrayList&lt;String&gt;();</span>
-<span class="source-line-no">219</span><span id="line-219">                podStub.model().get().getStatus().getPodIPs().stream()</span>
-<span class="source-line-no">220</span><span id="line-220">                    .map(ip -&gt; ip.getIp()).forEach(addrs::add);</span>
-<span class="source-line-no">221</span><span id="line-221">                vmDef.extra("nodeAddresses", addrs);</span>
-<span class="source-line-no">222</span><span id="line-222">                logger.fine(() -&gt; "Added node addresses " + addrs</span>
-<span class="source-line-no">223</span><span id="line-223">                    + " to VM info for " + vmDef.name());</span>
-<span class="source-line-no">224</span><span id="line-224">            }</span>
-<span class="source-line-no">225</span><span id="line-225">        } catch (ApiException e) {</span>
-<span class="source-line-no">226</span><span id="line-226">            logger.log(Level.WARNING, e,</span>
-<span class="source-line-no">227</span><span id="line-227">                () -&gt; "Cannot access node information: " + e.getMessage());</span>
-<span class="source-line-no">228</span><span id="line-228">        }</span>
-<span class="source-line-no">229</span><span id="line-229">    }</span>
-<span class="source-line-no">230</span><span id="line-230">}</span>
+<span class="source-line-no">167</span><span id="line-167">    @SuppressWarnings("PMD.AvoidDuplicateLiterals")</span>
+<span class="source-line-no">168</span><span id="line-168">    private void addDynamicData(K8sClient client, VmDefinition vmDef,</span>
+<span class="source-line-no">169</span><span id="line-169">            VmDefinition prevState) {</span>
+<span class="source-line-no">170</span><span id="line-170">        // Maintain (or initialize) the resetCount</span>
+<span class="source-line-no">171</span><span id="line-171">        vmDef.extra("resetCount",</span>
+<span class="source-line-no">172</span><span id="line-172">            Optional.ofNullable(prevState).map(d -&gt; d.extra("resetCount"))</span>
+<span class="source-line-no">173</span><span id="line-173">                .orElse(0L));</span>
+<span class="source-line-no">174</span><span id="line-174"></span>
+<span class="source-line-no">175</span><span id="line-175">        // Node information</span>
+<span class="source-line-no">176</span><span id="line-176">        // Add defaults in case the VM is not running</span>
+<span class="source-line-no">177</span><span id="line-177">        vmDef.extra("nodeName", "");</span>
+<span class="source-line-no">178</span><span id="line-178">        vmDef.extra("nodeAddress", "");</span>
+<span class="source-line-no">179</span><span id="line-179"></span>
+<span class="source-line-no">180</span><span id="line-180">        // VM definition status changes before the pod terminates.</span>
+<span class="source-line-no">181</span><span id="line-181">        // This results in pod information being shown for a stopped</span>
+<span class="source-line-no">182</span><span id="line-182">        // VM which is irritating. So check condition first.</span>
+<span class="source-line-no">183</span><span id="line-183">        if (!vmDef.conditionStatus("Running").orElse(false)) {</span>
+<span class="source-line-no">184</span><span id="line-184">            return;</span>
+<span class="source-line-no">185</span><span id="line-185">        }</span>
+<span class="source-line-no">186</span><span id="line-186">        var podSearch = new ListOptions();</span>
+<span class="source-line-no">187</span><span id="line-187">        podSearch.setLabelSelector("app.kubernetes.io/name=" + APP_NAME</span>
+<span class="source-line-no">188</span><span id="line-188">            + ",app.kubernetes.io/component=" + APP_NAME</span>
+<span class="source-line-no">189</span><span id="line-189">            + ",app.kubernetes.io/instance=" + vmDef.name());</span>
+<span class="source-line-no">190</span><span id="line-190">        try {</span>
+<span class="source-line-no">191</span><span id="line-191">            var podList</span>
+<span class="source-line-no">192</span><span id="line-192">                = K8sV1PodStub.list(client, namespace(), podSearch);</span>
+<span class="source-line-no">193</span><span id="line-193">            for (var podStub : podList) {</span>
+<span class="source-line-no">194</span><span id="line-194">                var nodeName = podStub.model().get().getSpec().getNodeName();</span>
+<span class="source-line-no">195</span><span id="line-195">                vmDef.extra("nodeName", nodeName);</span>
+<span class="source-line-no">196</span><span id="line-196">                logger.fine(() -&gt; "Added node name " + nodeName</span>
+<span class="source-line-no">197</span><span id="line-197">                    + " to VM info for " + vmDef.name());</span>
+<span class="source-line-no">198</span><span id="line-198">                @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")</span>
+<span class="source-line-no">199</span><span id="line-199">                var addrs = new ArrayList&lt;String&gt;();</span>
+<span class="source-line-no">200</span><span id="line-200">                podStub.model().get().getStatus().getPodIPs().stream()</span>
+<span class="source-line-no">201</span><span id="line-201">                    .map(ip -&gt; ip.getIp()).forEach(addrs::add);</span>
+<span class="source-line-no">202</span><span id="line-202">                vmDef.extra("nodeAddresses", addrs);</span>
+<span class="source-line-no">203</span><span id="line-203">                logger.fine(() -&gt; "Added node addresses " + addrs</span>
+<span class="source-line-no">204</span><span id="line-204">                    + " to VM info for " + vmDef.name());</span>
+<span class="source-line-no">205</span><span id="line-205">            }</span>
+<span class="source-line-no">206</span><span id="line-206">        } catch (ApiException e) {</span>
+<span class="source-line-no">207</span><span id="line-207">            logger.log(Level.WARNING, e,</span>
+<span class="source-line-no">208</span><span id="line-208">                () -&gt; "Cannot access node information: " + e.getMessage());</span>
+<span class="source-line-no">209</span><span id="line-209">        }</span>
+<span class="source-line-no">210</span><span id="line-210">    }</span>
+<span class="source-line-no">211</span><span id="line-211">}</span>
 
 
 
