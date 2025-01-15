@@ -50,90 +50,118 @@
 <span class="source-line-no">036</span><span id="line-36">public class VmPool {</span>
 <span class="source-line-no">037</span><span id="line-37"></span>
 <span class="source-line-no">038</span><span id="line-38">    private String name;</span>
-<span class="source-line-no">039</span><span id="line-39">    private List&lt;Grant&gt; permissions = Collections.emptyList();</span>
-<span class="source-line-no">040</span><span id="line-40">    private final Set&lt;String&gt; vms</span>
-<span class="source-line-no">041</span><span id="line-41">        = Collections.synchronizedSet(new HashSet&lt;&gt;());</span>
-<span class="source-line-no">042</span><span id="line-42"></span>
-<span class="source-line-no">043</span><span id="line-43">    /**</span>
-<span class="source-line-no">044</span><span id="line-44">     * Returns the name.</span>
-<span class="source-line-no">045</span><span id="line-45">     *</span>
-<span class="source-line-no">046</span><span id="line-46">     * @return the name</span>
-<span class="source-line-no">047</span><span id="line-47">     */</span>
-<span class="source-line-no">048</span><span id="line-48">    public String name() {</span>
-<span class="source-line-no">049</span><span id="line-49">        return name;</span>
-<span class="source-line-no">050</span><span id="line-50">    }</span>
-<span class="source-line-no">051</span><span id="line-51"></span>
-<span class="source-line-no">052</span><span id="line-52">    /**</span>
-<span class="source-line-no">053</span><span id="line-53">     * Sets the name.</span>
-<span class="source-line-no">054</span><span id="line-54">     *</span>
-<span class="source-line-no">055</span><span id="line-55">     * @param name the name to set</span>
-<span class="source-line-no">056</span><span id="line-56">     */</span>
-<span class="source-line-no">057</span><span id="line-57">    public void setName(String name) {</span>
-<span class="source-line-no">058</span><span id="line-58">        this.name = name;</span>
-<span class="source-line-no">059</span><span id="line-59">    }</span>
-<span class="source-line-no">060</span><span id="line-60"></span>
-<span class="source-line-no">061</span><span id="line-61">    /**</span>
-<span class="source-line-no">062</span><span id="line-62">     * Permissions granted for a VM from the pool.</span>
-<span class="source-line-no">063</span><span id="line-63">     *</span>
-<span class="source-line-no">064</span><span id="line-64">     * @return the permissions</span>
-<span class="source-line-no">065</span><span id="line-65">     */</span>
-<span class="source-line-no">066</span><span id="line-66">    public List&lt;Grant&gt; permissions() {</span>
-<span class="source-line-no">067</span><span id="line-67">        return permissions;</span>
-<span class="source-line-no">068</span><span id="line-68">    }</span>
-<span class="source-line-no">069</span><span id="line-69"></span>
-<span class="source-line-no">070</span><span id="line-70">    /**</span>
-<span class="source-line-no">071</span><span id="line-71">     * Sets the permissions.</span>
-<span class="source-line-no">072</span><span id="line-72">     *</span>
-<span class="source-line-no">073</span><span id="line-73">     * @param permissions the permissions to set</span>
-<span class="source-line-no">074</span><span id="line-74">     */</span>
-<span class="source-line-no">075</span><span id="line-75">    public void setPermissions(List&lt;Grant&gt; permissions) {</span>
-<span class="source-line-no">076</span><span id="line-76">        this.permissions = permissions;</span>
-<span class="source-line-no">077</span><span id="line-77">    }</span>
-<span class="source-line-no">078</span><span id="line-78"></span>
-<span class="source-line-no">079</span><span id="line-79">    /**</span>
-<span class="source-line-no">080</span><span id="line-80">     * Returns the VM names.</span>
-<span class="source-line-no">081</span><span id="line-81">     *</span>
-<span class="source-line-no">082</span><span id="line-82">     * @return the vms</span>
-<span class="source-line-no">083</span><span id="line-83">     */</span>
-<span class="source-line-no">084</span><span id="line-84">    public Set&lt;String&gt; vms() {</span>
-<span class="source-line-no">085</span><span id="line-85">        return vms;</span>
-<span class="source-line-no">086</span><span id="line-86">    }</span>
-<span class="source-line-no">087</span><span id="line-87"></span>
-<span class="source-line-no">088</span><span id="line-88">    @Override</span>
-<span class="source-line-no">089</span><span id="line-89">    @SuppressWarnings("PMD.AvoidLiteralsInIfCondition")</span>
-<span class="source-line-no">090</span><span id="line-90">    public String toString() {</span>
-<span class="source-line-no">091</span><span id="line-91">        StringBuilder builder = new StringBuilder(50);</span>
-<span class="source-line-no">092</span><span id="line-92">        builder.append("VmPool [name=").append(name).append(", permissions=")</span>
-<span class="source-line-no">093</span><span id="line-93">            .append(permissions).append(", vms=");</span>
-<span class="source-line-no">094</span><span id="line-94">        if (vms.size() &lt;= 3) {</span>
-<span class="source-line-no">095</span><span id="line-95">            builder.append(vms);</span>
-<span class="source-line-no">096</span><span id="line-96">        } else {</span>
-<span class="source-line-no">097</span><span id="line-97">            builder.append('[').append(vms.stream().limit(3).map(s -&gt; s + ",")</span>
-<span class="source-line-no">098</span><span id="line-98">                .collect(Collectors.joining())).append("...]");</span>
-<span class="source-line-no">099</span><span id="line-99">        }</span>
-<span class="source-line-no">100</span><span id="line-100">        builder.append(']');</span>
-<span class="source-line-no">101</span><span id="line-101">        return builder.toString();</span>
-<span class="source-line-no">102</span><span id="line-102">    }</span>
-<span class="source-line-no">103</span><span id="line-103"></span>
-<span class="source-line-no">104</span><span id="line-104">    /**</span>
-<span class="source-line-no">105</span><span id="line-105">     * Collect all permissions for the given user with the given roles.</span>
-<span class="source-line-no">106</span><span id="line-106">     *</span>
-<span class="source-line-no">107</span><span id="line-107">     * @param user the user</span>
-<span class="source-line-no">108</span><span id="line-108">     * @param roles the roles</span>
-<span class="source-line-no">109</span><span id="line-109">     * @return the sets the</span>
-<span class="source-line-no">110</span><span id="line-110">     */</span>
-<span class="source-line-no">111</span><span id="line-111">    public Set&lt;Permission&gt; permissionsFor(String user,</span>
-<span class="source-line-no">112</span><span id="line-112">            Collection&lt;String&gt; roles) {</span>
-<span class="source-line-no">113</span><span id="line-113">        return permissions.stream()</span>
-<span class="source-line-no">114</span><span id="line-114">            .filter(g -&gt; DataPath.get(g, "user").map(u -&gt; u.equals(user))</span>
-<span class="source-line-no">115</span><span id="line-115">                .orElse(false)</span>
-<span class="source-line-no">116</span><span id="line-116">                || DataPath.get(g, "role").map(roles::contains).orElse(false))</span>
-<span class="source-line-no">117</span><span id="line-117">            .map(g -&gt; DataPath.&lt;Set&lt;Permission&gt;&gt; get(g, "may")</span>
-<span class="source-line-no">118</span><span id="line-118">                .orElse(Collections.emptySet()).stream())</span>
-<span class="source-line-no">119</span><span id="line-119">            .flatMap(Function.identity()).collect(Collectors.toSet());</span>
-<span class="source-line-no">120</span><span id="line-120">    }</span>
-<span class="source-line-no">121</span><span id="line-121"></span>
-<span class="source-line-no">122</span><span id="line-122">}</span>
+<span class="source-line-no">039</span><span id="line-39">    private boolean defined;</span>
+<span class="source-line-no">040</span><span id="line-40">    private List&lt;Grant&gt; permissions = Collections.emptyList();</span>
+<span class="source-line-no">041</span><span id="line-41">    private final Set&lt;String&gt; vms</span>
+<span class="source-line-no">042</span><span id="line-42">        = Collections.synchronizedSet(new HashSet&lt;&gt;());</span>
+<span class="source-line-no">043</span><span id="line-43"></span>
+<span class="source-line-no">044</span><span id="line-44">    /**</span>
+<span class="source-line-no">045</span><span id="line-45">     * Instantiates a new vm pool.</span>
+<span class="source-line-no">046</span><span id="line-46">     *</span>
+<span class="source-line-no">047</span><span id="line-47">     * @param name the name</span>
+<span class="source-line-no">048</span><span id="line-48">     */</span>
+<span class="source-line-no">049</span><span id="line-49">    public VmPool(String name) {</span>
+<span class="source-line-no">050</span><span id="line-50">        this.name = name;</span>
+<span class="source-line-no">051</span><span id="line-51">    }</span>
+<span class="source-line-no">052</span><span id="line-52"></span>
+<span class="source-line-no">053</span><span id="line-53">    /**</span>
+<span class="source-line-no">054</span><span id="line-54">     * Returns the name.</span>
+<span class="source-line-no">055</span><span id="line-55">     *</span>
+<span class="source-line-no">056</span><span id="line-56">     * @return the name</span>
+<span class="source-line-no">057</span><span id="line-57">     */</span>
+<span class="source-line-no">058</span><span id="line-58">    public String name() {</span>
+<span class="source-line-no">059</span><span id="line-59">        return name;</span>
+<span class="source-line-no">060</span><span id="line-60">    }</span>
+<span class="source-line-no">061</span><span id="line-61"></span>
+<span class="source-line-no">062</span><span id="line-62">    /**</span>
+<span class="source-line-no">063</span><span id="line-63">     * Sets the name.</span>
+<span class="source-line-no">064</span><span id="line-64">     *</span>
+<span class="source-line-no">065</span><span id="line-65">     * @param name the name to set</span>
+<span class="source-line-no">066</span><span id="line-66">     */</span>
+<span class="source-line-no">067</span><span id="line-67">    public void setName(String name) {</span>
+<span class="source-line-no">068</span><span id="line-68">        this.name = name;</span>
+<span class="source-line-no">069</span><span id="line-69">    }</span>
+<span class="source-line-no">070</span><span id="line-70"></span>
+<span class="source-line-no">071</span><span id="line-71">    /**</span>
+<span class="source-line-no">072</span><span id="line-72">     * Checks if is defined.</span>
+<span class="source-line-no">073</span><span id="line-73">     *</span>
+<span class="source-line-no">074</span><span id="line-74">     * @return the result</span>
+<span class="source-line-no">075</span><span id="line-75">     */</span>
+<span class="source-line-no">076</span><span id="line-76">    public boolean isDefined() {</span>
+<span class="source-line-no">077</span><span id="line-77">        return defined;</span>
+<span class="source-line-no">078</span><span id="line-78">    }</span>
+<span class="source-line-no">079</span><span id="line-79"></span>
+<span class="source-line-no">080</span><span id="line-80">    /**</span>
+<span class="source-line-no">081</span><span id="line-81">     * Sets if is.</span>
+<span class="source-line-no">082</span><span id="line-82">     *</span>
+<span class="source-line-no">083</span><span id="line-83">     * @param defined the defined to set</span>
+<span class="source-line-no">084</span><span id="line-84">     */</span>
+<span class="source-line-no">085</span><span id="line-85">    public void setDefined(boolean defined) {</span>
+<span class="source-line-no">086</span><span id="line-86">        this.defined = defined;</span>
+<span class="source-line-no">087</span><span id="line-87">    }</span>
+<span class="source-line-no">088</span><span id="line-88"></span>
+<span class="source-line-no">089</span><span id="line-89">    /**</span>
+<span class="source-line-no">090</span><span id="line-90">     * Permissions granted for a VM from the pool.</span>
+<span class="source-line-no">091</span><span id="line-91">     *</span>
+<span class="source-line-no">092</span><span id="line-92">     * @return the permissions</span>
+<span class="source-line-no">093</span><span id="line-93">     */</span>
+<span class="source-line-no">094</span><span id="line-94">    public List&lt;Grant&gt; permissions() {</span>
+<span class="source-line-no">095</span><span id="line-95">        return permissions;</span>
+<span class="source-line-no">096</span><span id="line-96">    }</span>
+<span class="source-line-no">097</span><span id="line-97"></span>
+<span class="source-line-no">098</span><span id="line-98">    /**</span>
+<span class="source-line-no">099</span><span id="line-99">     * Sets the permissions.</span>
+<span class="source-line-no">100</span><span id="line-100">     *</span>
+<span class="source-line-no">101</span><span id="line-101">     * @param permissions the permissions to set</span>
+<span class="source-line-no">102</span><span id="line-102">     */</span>
+<span class="source-line-no">103</span><span id="line-103">    public void setPermissions(List&lt;Grant&gt; permissions) {</span>
+<span class="source-line-no">104</span><span id="line-104">        this.permissions = permissions;</span>
+<span class="source-line-no">105</span><span id="line-105">    }</span>
+<span class="source-line-no">106</span><span id="line-106"></span>
+<span class="source-line-no">107</span><span id="line-107">    /**</span>
+<span class="source-line-no">108</span><span id="line-108">     * Returns the VM names.</span>
+<span class="source-line-no">109</span><span id="line-109">     *</span>
+<span class="source-line-no">110</span><span id="line-110">     * @return the vms</span>
+<span class="source-line-no">111</span><span id="line-111">     */</span>
+<span class="source-line-no">112</span><span id="line-112">    public Set&lt;String&gt; vms() {</span>
+<span class="source-line-no">113</span><span id="line-113">        return vms;</span>
+<span class="source-line-no">114</span><span id="line-114">    }</span>
+<span class="source-line-no">115</span><span id="line-115"></span>
+<span class="source-line-no">116</span><span id="line-116">    @Override</span>
+<span class="source-line-no">117</span><span id="line-117">    @SuppressWarnings("PMD.AvoidLiteralsInIfCondition")</span>
+<span class="source-line-no">118</span><span id="line-118">    public String toString() {</span>
+<span class="source-line-no">119</span><span id="line-119">        StringBuilder builder = new StringBuilder(50);</span>
+<span class="source-line-no">120</span><span id="line-120">        builder.append("VmPool [name=").append(name).append(", permissions=")</span>
+<span class="source-line-no">121</span><span id="line-121">            .append(permissions).append(", vms=");</span>
+<span class="source-line-no">122</span><span id="line-122">        if (vms.size() &lt;= 3) {</span>
+<span class="source-line-no">123</span><span id="line-123">            builder.append(vms);</span>
+<span class="source-line-no">124</span><span id="line-124">        } else {</span>
+<span class="source-line-no">125</span><span id="line-125">            builder.append('[').append(vms.stream().limit(3).map(s -&gt; s + ",")</span>
+<span class="source-line-no">126</span><span id="line-126">                .collect(Collectors.joining())).append("...]");</span>
+<span class="source-line-no">127</span><span id="line-127">        }</span>
+<span class="source-line-no">128</span><span id="line-128">        builder.append(']');</span>
+<span class="source-line-no">129</span><span id="line-129">        return builder.toString();</span>
+<span class="source-line-no">130</span><span id="line-130">    }</span>
+<span class="source-line-no">131</span><span id="line-131"></span>
+<span class="source-line-no">132</span><span id="line-132">    /**</span>
+<span class="source-line-no">133</span><span id="line-133">     * Collect all permissions for the given user with the given roles.</span>
+<span class="source-line-no">134</span><span id="line-134">     *</span>
+<span class="source-line-no">135</span><span id="line-135">     * @param user the user</span>
+<span class="source-line-no">136</span><span id="line-136">     * @param roles the roles</span>
+<span class="source-line-no">137</span><span id="line-137">     * @return the sets the</span>
+<span class="source-line-no">138</span><span id="line-138">     */</span>
+<span class="source-line-no">139</span><span id="line-139">    public Set&lt;Permission&gt; permissionsFor(String user,</span>
+<span class="source-line-no">140</span><span id="line-140">            Collection&lt;String&gt; roles) {</span>
+<span class="source-line-no">141</span><span id="line-141">        return permissions.stream()</span>
+<span class="source-line-no">142</span><span id="line-142">            .filter(g -&gt; DataPath.get(g, "user").map(u -&gt; u.equals(user))</span>
+<span class="source-line-no">143</span><span id="line-143">                .orElse(false)</span>
+<span class="source-line-no">144</span><span id="line-144">                || DataPath.get(g, "role").map(roles::contains).orElse(false))</span>
+<span class="source-line-no">145</span><span id="line-145">            .map(g -&gt; DataPath.&lt;Set&lt;Permission&gt;&gt; get(g, "may")</span>
+<span class="source-line-no">146</span><span id="line-146">                .orElse(Collections.emptySet()).stream())</span>
+<span class="source-line-no">147</span><span id="line-147">            .flatMap(Function.identity()).collect(Collectors.toSet());</span>
+<span class="source-line-no">148</span><span id="line-148">    }</span>
+<span class="source-line-no">149</span><span id="line-149"></span>
+<span class="source-line-no">150</span><span id="line-150">}</span>
 
 
 
