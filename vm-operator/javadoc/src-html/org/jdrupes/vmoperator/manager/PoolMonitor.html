@@ -184,7 +184,7 @@
 <span class="source-line-no">170</span><span id="line-170">     */</span>
 <span class="source-line-no">171</span><span id="line-171">    @Handler</span>
 <span class="source-line-no">172</span><span id="line-172">    public void onGetPools(GetPools event) {</span>
-<span class="source-line-no">173</span><span id="line-173">        event.setResult(pools.values().stream()</span>
+<span class="source-line-no">173</span><span id="line-173">        event.setResult(pools.values().stream().filter(VmPool::isDefined)</span>
 <span class="source-line-no">174</span><span id="line-174">            .filter(p -&gt; event.name().isEmpty()</span>
 <span class="source-line-no">175</span><span id="line-175">                || p.name().equals(event.name().get()))</span>
 <span class="source-line-no">176</span><span id="line-176">            .filter(p -&gt; event.forUser().isEmpty() &amp;&amp; event.forRoles().isEmpty()</span>
