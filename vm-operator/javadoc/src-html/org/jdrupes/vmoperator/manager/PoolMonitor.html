@@ -185,12 +185,14 @@
 <span class="source-line-no">171</span><span id="line-171">    @Handler</span>
 <span class="source-line-no">172</span><span id="line-172">    public void onGetPools(GetPools event) {</span>
 <span class="source-line-no">173</span><span id="line-173">        event.setResult(pools.values().stream()</span>
-<span class="source-line-no">174</span><span id="line-174">            .filter(p -&gt; event.forUser().isEmpty() &amp;&amp; event.forRoles().isEmpty()</span>
-<span class="source-line-no">175</span><span id="line-175">                || !p.permissionsFor(event.forUser().orElse(null),</span>
-<span class="source-line-no">176</span><span id="line-176">                    event.forRoles()).isEmpty())</span>
-<span class="source-line-no">177</span><span id="line-177">            .toList());</span>
-<span class="source-line-no">178</span><span id="line-178">    }</span>
-<span class="source-line-no">179</span><span id="line-179">}</span>
+<span class="source-line-no">174</span><span id="line-174">            .filter(p -&gt; event.name().isEmpty()</span>
+<span class="source-line-no">175</span><span id="line-175">                || p.name().equals(event.name().get()))</span>
+<span class="source-line-no">176</span><span id="line-176">            .filter(p -&gt; event.forUser().isEmpty() &amp;&amp; event.forRoles().isEmpty()</span>
+<span class="source-line-no">177</span><span id="line-177">                || !p.permissionsFor(event.forUser().orElse(null),</span>
+<span class="source-line-no">178</span><span id="line-178">                    event.forRoles()).isEmpty())</span>
+<span class="source-line-no">179</span><span id="line-179">            .toList());</span>
+<span class="source-line-no">180</span><span id="line-180">    }</span>
+<span class="source-line-no">181</span><span id="line-181">}</span>
 
 
 
