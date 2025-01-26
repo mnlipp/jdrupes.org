@@ -297,44 +297,71 @@
 <span class="source-line-no">283</span><span id="line-283">            // Find available VM.</span>
 <span class="source-line-no">284</span><span id="line-284">            var pool = vmPool;</span>
 <span class="source-line-no">285</span><span id="line-285">            assignedVm = channelManager.channels().stream()</span>
-<span class="source-line-no">286</span><span id="line-286">                .filter(c -&gt; c.vmDefinition().pools()</span>
-<span class="source-line-no">287</span><span id="line-287">                    .contains(event.fromPool()))</span>
-<span class="source-line-no">288</span><span id="line-288">                .filter(c -&gt; !c.vmDefinition()</span>
-<span class="source-line-no">289</span><span id="line-289">                    .conditionStatus("ConsoleConnected").orElse(false))</span>
-<span class="source-line-no">290</span><span id="line-290">                .filter(c -&gt; c.vmDefinition().assignedTo().isEmpty()</span>
-<span class="source-line-no">291</span><span id="line-291">                    || pool.retainUntil(c.vmDefinition()</span>
-<span class="source-line-no">292</span><span id="line-292">                        .&lt;String&gt; fromStatus("assignment", "lastUsed")</span>
-<span class="source-line-no">293</span><span id="line-293">                        .map(Instant::parse).orElse(Instant.ofEpochSecond(0)))</span>
-<span class="source-line-no">294</span><span id="line-294">                        .isBefore(Instant.now()))</span>
-<span class="source-line-no">295</span><span id="line-295">                .sorted(Comparator.comparing(c -&gt; c.vmDefinition()</span>
-<span class="source-line-no">296</span><span id="line-296">                    .assignmentLastUsed().orElse(Instant.ofEpochSecond(0))))</span>
-<span class="source-line-no">297</span><span id="line-297">                .findFirst();</span>
-<span class="source-line-no">298</span><span id="line-298"></span>
-<span class="source-line-no">299</span><span id="line-299">            // None found</span>
-<span class="source-line-no">300</span><span id="line-300">            if (assignedVm.isEmpty()) {</span>
-<span class="source-line-no">301</span><span id="line-301">                return;</span>
-<span class="source-line-no">302</span><span id="line-302">            }</span>
-<span class="source-line-no">303</span><span id="line-303"></span>
-<span class="source-line-no">304</span><span id="line-304">            // Assign to user</span>
-<span class="source-line-no">305</span><span id="line-305">            var vmDef = assignedVm.get().vmDefinition();</span>
-<span class="source-line-no">306</span><span id="line-306">            var vmStub = VmDefinitionStub.get(client(),</span>
-<span class="source-line-no">307</span><span id="line-307">                new GroupVersionKind(VM_OP_GROUP, "", VM_OP_KIND_VM),</span>
-<span class="source-line-no">308</span><span id="line-308">                vmDef.namespace(), vmDef.name());</span>
-<span class="source-line-no">309</span><span id="line-309">            vmStub.updateStatus(from -&gt; {</span>
-<span class="source-line-no">310</span><span id="line-310">                JsonObject status = from.status();</span>
-<span class="source-line-no">311</span><span id="line-311">                var assignment = GsonPtr.to(status).to("assignment");</span>
-<span class="source-line-no">312</span><span id="line-312">                assignment.set("pool", event.fromPool());</span>
-<span class="source-line-no">313</span><span id="line-313">                assignment.set("user", event.toUser());</span>
-<span class="source-line-no">314</span><span id="line-314">                assignment.set("lastUsed", Instant.now().toString());</span>
-<span class="source-line-no">315</span><span id="line-315">                return status;</span>
-<span class="source-line-no">316</span><span id="line-316">            });</span>
-<span class="source-line-no">317</span><span id="line-317"></span>
-<span class="source-line-no">318</span><span id="line-318">            // Make sure that a newly assigned VM is running.</span>
-<span class="source-line-no">319</span><span id="line-319">            fire(new ModifyVm(vmDef.name(), "state", "Running",</span>
-<span class="source-line-no">320</span><span id="line-320">                assignedVm.get()));</span>
+<span class="source-line-no">286</span><span id="line-286">                .filter(c -&gt; isAssignable(pool, c.vmDefinition()))</span>
+<span class="source-line-no">287</span><span id="line-287">                .sorted(Comparator.comparing(c -&gt; c.vmDefinition()</span>
+<span class="source-line-no">288</span><span id="line-288">                    .assignmentLastUsed().orElse(Instant.ofEpochSecond(0))))</span>
+<span class="source-line-no">289</span><span id="line-289">                .findFirst();</span>
+<span class="source-line-no">290</span><span id="line-290"></span>
+<span class="source-line-no">291</span><span id="line-291">            // None found</span>
+<span class="source-line-no">292</span><span id="line-292">            if (assignedVm.isEmpty()) {</span>
+<span class="source-line-no">293</span><span id="line-293">                return;</span>
+<span class="source-line-no">294</span><span id="line-294">            }</span>
+<span class="source-line-no">295</span><span id="line-295"></span>
+<span class="source-line-no">296</span><span id="line-296">            // Assign to user</span>
+<span class="source-line-no">297</span><span id="line-297">            var vmDef = assignedVm.get().vmDefinition();</span>
+<span class="source-line-no">298</span><span id="line-298">            var vmStub = VmDefinitionStub.get(client(),</span>
+<span class="source-line-no">299</span><span id="line-299">                new GroupVersionKind(VM_OP_GROUP, "", VM_OP_KIND_VM),</span>
+<span class="source-line-no">300</span><span id="line-300">                vmDef.namespace(), vmDef.name());</span>
+<span class="source-line-no">301</span><span id="line-301">            vmStub.updateStatus(from -&gt; {</span>
+<span class="source-line-no">302</span><span id="line-302">                JsonObject status = from.status();</span>
+<span class="source-line-no">303</span><span id="line-303">                var assignment = GsonPtr.to(status).to("assignment");</span>
+<span class="source-line-no">304</span><span id="line-304">                assignment.set("pool", event.fromPool());</span>
+<span class="source-line-no">305</span><span id="line-305">                assignment.set("user", event.toUser());</span>
+<span class="source-line-no">306</span><span id="line-306">                assignment.set("lastUsed", Instant.now().toString());</span>
+<span class="source-line-no">307</span><span id="line-307">                return status;</span>
+<span class="source-line-no">308</span><span id="line-308">            });</span>
+<span class="source-line-no">309</span><span id="line-309"></span>
+<span class="source-line-no">310</span><span id="line-310">            // Make sure that a newly assigned VM is running.</span>
+<span class="source-line-no">311</span><span id="line-311">            fire(new ModifyVm(vmDef.name(), "state", "Running",</span>
+<span class="source-line-no">312</span><span id="line-312">                assignedVm.get()));</span>
+<span class="source-line-no">313</span><span id="line-313">        }</span>
+<span class="source-line-no">314</span><span id="line-314">    }</span>
+<span class="source-line-no">315</span><span id="line-315"></span>
+<span class="source-line-no">316</span><span id="line-316">    @SuppressWarnings("PMD.SimplifyBooleanReturns")</span>
+<span class="source-line-no">317</span><span id="line-317">    private boolean isAssignable(VmPool pool, VmDefinition vmDef) {</span>
+<span class="source-line-no">318</span><span id="line-318">        // Check if the VM is in the pool</span>
+<span class="source-line-no">319</span><span id="line-319">        if (!vmDef.pools().contains(pool.name())) {</span>
+<span class="source-line-no">320</span><span id="line-320">            return false;</span>
 <span class="source-line-no">321</span><span id="line-321">        }</span>
-<span class="source-line-no">322</span><span id="line-322">    }</span>
-<span class="source-line-no">323</span><span id="line-323">}</span>
+<span class="source-line-no">322</span><span id="line-322"></span>
+<span class="source-line-no">323</span><span id="line-323">        // Check if the VM is not in use</span>
+<span class="source-line-no">324</span><span id="line-324">        if (vmDef.consoleConnected()) {</span>
+<span class="source-line-no">325</span><span id="line-325">            return false;</span>
+<span class="source-line-no">326</span><span id="line-326">        }</span>
+<span class="source-line-no">327</span><span id="line-327"></span>
+<span class="source-line-no">328</span><span id="line-328">        // If not assigned, it's usable</span>
+<span class="source-line-no">329</span><span id="line-329">        if (vmDef.assignedTo().isEmpty()) {</span>
+<span class="source-line-no">330</span><span id="line-330">            return true;</span>
+<span class="source-line-no">331</span><span id="line-331">        }</span>
+<span class="source-line-no">332</span><span id="line-332"></span>
+<span class="source-line-no">333</span><span id="line-333">        // Check if it is to be retained</span>
+<span class="source-line-no">334</span><span id="line-334">        if (vmDef.assignmentLastUsed()</span>
+<span class="source-line-no">335</span><span id="line-335">            .map(lu -&gt; pool.retainUntil(lu))</span>
+<span class="source-line-no">336</span><span id="line-336">            .map(ru -&gt; Instant.now().isBefore(ru)).orElse(false)) {</span>
+<span class="source-line-no">337</span><span id="line-337">            return false;</span>
+<span class="source-line-no">338</span><span id="line-338">        }</span>
+<span class="source-line-no">339</span><span id="line-339"></span>
+<span class="source-line-no">340</span><span id="line-340">        // Additional check in case lastUsed has not been updated</span>
+<span class="source-line-no">341</span><span id="line-341">        // by PoolMonitor#onVmDefChanged() yet ("race condition")</span>
+<span class="source-line-no">342</span><span id="line-342">        if (vmDef.condition("ConsoleConnected")</span>
+<span class="source-line-no">343</span><span id="line-343">            .map(cc -&gt; cc.getLastTransitionTime().toInstant())</span>
+<span class="source-line-no">344</span><span id="line-344">            .map(t -&gt; pool.retainUntil(t))</span>
+<span class="source-line-no">345</span><span id="line-345">            .map(ru -&gt; Instant.now().isBefore(ru)).orElse(false)) {</span>
+<span class="source-line-no">346</span><span id="line-346">            return false;</span>
+<span class="source-line-no">347</span><span id="line-347">        }</span>
+<span class="source-line-no">348</span><span id="line-348">        return true;</span>
+<span class="source-line-no">349</span><span id="line-349">    }</span>
+<span class="source-line-no">350</span><span id="line-350">}</span>
 
 
 

@@ -368,124 +368,142 @@
 <span class="source-line-no">354</span><span id="line-354">    }</span>
 <span class="source-line-no">355</span><span id="line-355"></span>
 <span class="source-line-no">356</span><span id="line-356">    /**</span>
-<span class="source-line-no">357</span><span id="line-357">     * Set extra data (locally used, unknown to kubernetes).</span>
+<span class="source-line-no">357</span><span id="line-357">     * Return true if the console is in use.</span>
 <span class="source-line-no">358</span><span id="line-358">     *</span>
-<span class="source-line-no">359</span><span id="line-359">     * @param property the property</span>
-<span class="source-line-no">360</span><span id="line-360">     * @param value the value</span>
-<span class="source-line-no">361</span><span id="line-361">     * @return the VM definition</span>
-<span class="source-line-no">362</span><span id="line-362">     */</span>
-<span class="source-line-no">363</span><span id="line-363">    public VmDefinition extra(String property, Object value) {</span>
-<span class="source-line-no">364</span><span id="line-364">        extra.put(property, value);</span>
-<span class="source-line-no">365</span><span id="line-365">        return this;</span>
-<span class="source-line-no">366</span><span id="line-366">    }</span>
-<span class="source-line-no">367</span><span id="line-367"></span>
-<span class="source-line-no">368</span><span id="line-368">    /**</span>
-<span class="source-line-no">369</span><span id="line-369">     * Return extra data.</span>
-<span class="source-line-no">370</span><span id="line-370">     *</span>
-<span class="source-line-no">371</span><span id="line-371">     * @param &lt;T&gt; the generic type</span>
-<span class="source-line-no">372</span><span id="line-372">     * @param property the property</span>
-<span class="source-line-no">373</span><span id="line-373">     * @return the object</span>
-<span class="source-line-no">374</span><span id="line-374">     */</span>
-<span class="source-line-no">375</span><span id="line-375">    @SuppressWarnings("unchecked")</span>
-<span class="source-line-no">376</span><span id="line-376">    public &lt;T&gt; T extra(String property) {</span>
-<span class="source-line-no">377</span><span id="line-377">        return (T) extra.get(property);</span>
-<span class="source-line-no">378</span><span id="line-378">    }</span>
-<span class="source-line-no">379</span><span id="line-379"></span>
-<span class="source-line-no">380</span><span id="line-380">    /**</span>
-<span class="source-line-no">381</span><span id="line-381">     * Returns the definition's name.</span>
-<span class="source-line-no">382</span><span id="line-382">     *</span>
-<span class="source-line-no">383</span><span id="line-383">     * @return the string</span>
-<span class="source-line-no">384</span><span id="line-384">     */</span>
-<span class="source-line-no">385</span><span id="line-385">    public String name() {</span>
-<span class="source-line-no">386</span><span id="line-386">        return metadata.getName();</span>
-<span class="source-line-no">387</span><span id="line-387">    }</span>
-<span class="source-line-no">388</span><span id="line-388"></span>
-<span class="source-line-no">389</span><span id="line-389">    /**</span>
-<span class="source-line-no">390</span><span id="line-390">     * Returns the definition's namespace.</span>
-<span class="source-line-no">391</span><span id="line-391">     *</span>
-<span class="source-line-no">392</span><span id="line-392">     * @return the string</span>
-<span class="source-line-no">393</span><span id="line-393">     */</span>
-<span class="source-line-no">394</span><span id="line-394">    public String namespace() {</span>
-<span class="source-line-no">395</span><span id="line-395">        return metadata.getNamespace();</span>
+<span class="source-line-no">359</span><span id="line-359">     * @return true, if successful</span>
+<span class="source-line-no">360</span><span id="line-360">     */</span>
+<span class="source-line-no">361</span><span id="line-361">    public boolean consoleConnected() {</span>
+<span class="source-line-no">362</span><span id="line-362">        return conditionStatus("ConsoleConnected").orElse(false);</span>
+<span class="source-line-no">363</span><span id="line-363">    }</span>
+<span class="source-line-no">364</span><span id="line-364"></span>
+<span class="source-line-no">365</span><span id="line-365">    /**</span>
+<span class="source-line-no">366</span><span id="line-366">     * Return the last known console user.</span>
+<span class="source-line-no">367</span><span id="line-367">     *</span>
+<span class="source-line-no">368</span><span id="line-368">     * @return the optional</span>
+<span class="source-line-no">369</span><span id="line-369">     */</span>
+<span class="source-line-no">370</span><span id="line-370">    public Optional&lt;String&gt; consoleUser() {</span>
+<span class="source-line-no">371</span><span id="line-371">        return this.&lt;String&gt; fromStatus("consoleUser");</span>
+<span class="source-line-no">372</span><span id="line-372">    }</span>
+<span class="source-line-no">373</span><span id="line-373"></span>
+<span class="source-line-no">374</span><span id="line-374">    /**</span>
+<span class="source-line-no">375</span><span id="line-375">     * Set extra data (locally used, unknown to kubernetes).</span>
+<span class="source-line-no">376</span><span id="line-376">     *</span>
+<span class="source-line-no">377</span><span id="line-377">     * @param property the property</span>
+<span class="source-line-no">378</span><span id="line-378">     * @param value the value</span>
+<span class="source-line-no">379</span><span id="line-379">     * @return the VM definition</span>
+<span class="source-line-no">380</span><span id="line-380">     */</span>
+<span class="source-line-no">381</span><span id="line-381">    public VmDefinition extra(String property, Object value) {</span>
+<span class="source-line-no">382</span><span id="line-382">        extra.put(property, value);</span>
+<span class="source-line-no">383</span><span id="line-383">        return this;</span>
+<span class="source-line-no">384</span><span id="line-384">    }</span>
+<span class="source-line-no">385</span><span id="line-385"></span>
+<span class="source-line-no">386</span><span id="line-386">    /**</span>
+<span class="source-line-no">387</span><span id="line-387">     * Return extra data.</span>
+<span class="source-line-no">388</span><span id="line-388">     *</span>
+<span class="source-line-no">389</span><span id="line-389">     * @param &lt;T&gt; the generic type</span>
+<span class="source-line-no">390</span><span id="line-390">     * @param property the property</span>
+<span class="source-line-no">391</span><span id="line-391">     * @return the object</span>
+<span class="source-line-no">392</span><span id="line-392">     */</span>
+<span class="source-line-no">393</span><span id="line-393">    @SuppressWarnings("unchecked")</span>
+<span class="source-line-no">394</span><span id="line-394">    public &lt;T&gt; T extra(String property) {</span>
+<span class="source-line-no">395</span><span id="line-395">        return (T) extra.get(property);</span>
 <span class="source-line-no">396</span><span id="line-396">    }</span>
 <span class="source-line-no">397</span><span id="line-397"></span>
 <span class="source-line-no">398</span><span id="line-398">    /**</span>
-<span class="source-line-no">399</span><span id="line-399">     * Return the requested VM state.</span>
+<span class="source-line-no">399</span><span id="line-399">     * Returns the definition's name.</span>
 <span class="source-line-no">400</span><span id="line-400">     *</span>
 <span class="source-line-no">401</span><span id="line-401">     * @return the string</span>
 <span class="source-line-no">402</span><span id="line-402">     */</span>
-<span class="source-line-no">403</span><span id="line-403">    public RequestedVmState vmState() {</span>
-<span class="source-line-no">404</span><span id="line-404">        return fromVm("state")</span>
-<span class="source-line-no">405</span><span id="line-405">            .map(s -&gt; "Running".equals(s) ? RequestedVmState.RUNNING</span>
-<span class="source-line-no">406</span><span id="line-406">                : RequestedVmState.STOPPED)</span>
-<span class="source-line-no">407</span><span id="line-407">            .orElse(RequestedVmState.STOPPED);</span>
-<span class="source-line-no">408</span><span id="line-408">    }</span>
-<span class="source-line-no">409</span><span id="line-409"></span>
-<span class="source-line-no">410</span><span id="line-410">    /**</span>
-<span class="source-line-no">411</span><span id="line-411">     * Collect all permissions for the given user with the given roles.</span>
-<span class="source-line-no">412</span><span id="line-412">     *</span>
-<span class="source-line-no">413</span><span id="line-413">     * @param user the user</span>
-<span class="source-line-no">414</span><span id="line-414">     * @param roles the roles</span>
-<span class="source-line-no">415</span><span id="line-415">     * @return the sets the</span>
-<span class="source-line-no">416</span><span id="line-416">     */</span>
-<span class="source-line-no">417</span><span id="line-417">    public Set&lt;Permission&gt; permissionsFor(String user,</span>
-<span class="source-line-no">418</span><span id="line-418">            Collection&lt;String&gt; roles) {</span>
-<span class="source-line-no">419</span><span id="line-419">        return this.&lt;List&lt;Map&lt;String, Object&gt;&gt;&gt; fromSpec("permissions")</span>
-<span class="source-line-no">420</span><span id="line-420">            .orElse(Collections.emptyList()).stream()</span>
-<span class="source-line-no">421</span><span id="line-421">            .filter(p -&gt; DataPath.get(p, "user").map(u -&gt; u.equals(user))</span>
-<span class="source-line-no">422</span><span id="line-422">                .orElse(false)</span>
-<span class="source-line-no">423</span><span id="line-423">                || DataPath.get(p, "role").map(roles::contains).orElse(false))</span>
-<span class="source-line-no">424</span><span id="line-424">            .map(p -&gt; DataPath.&lt;List&lt;String&gt;&gt; get(p, "may")</span>
-<span class="source-line-no">425</span><span id="line-425">                .orElse(Collections.emptyList()).stream())</span>
-<span class="source-line-no">426</span><span id="line-426">            .flatMap(Function.identity())</span>
-<span class="source-line-no">427</span><span id="line-427">            .map(Permission::parse).map(Set::stream)</span>
-<span class="source-line-no">428</span><span id="line-428">            .flatMap(Function.identity()).collect(Collectors.toSet());</span>
-<span class="source-line-no">429</span><span id="line-429">    }</span>
-<span class="source-line-no">430</span><span id="line-430"></span>
-<span class="source-line-no">431</span><span id="line-431">    /**</span>
-<span class="source-line-no">432</span><span id="line-432">     * Get the display password serial.</span>
-<span class="source-line-no">433</span><span id="line-433">     *</span>
-<span class="source-line-no">434</span><span id="line-434">     * @return the optional</span>
-<span class="source-line-no">435</span><span id="line-435">     */</span>
-<span class="source-line-no">436</span><span id="line-436">    public Optional&lt;Long&gt; displayPasswordSerial() {</span>
-<span class="source-line-no">437</span><span id="line-437">        return this.&lt;Number&gt; fromStatus("displayPasswordSerial")</span>
-<span class="source-line-no">438</span><span id="line-438">            .map(Number::longValue);</span>
-<span class="source-line-no">439</span><span id="line-439">    }</span>
-<span class="source-line-no">440</span><span id="line-440"></span>
-<span class="source-line-no">441</span><span id="line-441">    /**</span>
-<span class="source-line-no">442</span><span id="line-442">     * Hash code.</span>
-<span class="source-line-no">443</span><span id="line-443">     *</span>
-<span class="source-line-no">444</span><span id="line-444">     * @return the int</span>
-<span class="source-line-no">445</span><span id="line-445">     */</span>
-<span class="source-line-no">446</span><span id="line-446">    @Override</span>
-<span class="source-line-no">447</span><span id="line-447">    public int hashCode() {</span>
-<span class="source-line-no">448</span><span id="line-448">        return Objects.hash(metadata.getNamespace(), metadata.getName());</span>
-<span class="source-line-no">449</span><span id="line-449">    }</span>
-<span class="source-line-no">450</span><span id="line-450"></span>
-<span class="source-line-no">451</span><span id="line-451">    /**</span>
-<span class="source-line-no">452</span><span id="line-452">     * Equals.</span>
-<span class="source-line-no">453</span><span id="line-453">     *</span>
-<span class="source-line-no">454</span><span id="line-454">     * @param obj the obj</span>
-<span class="source-line-no">455</span><span id="line-455">     * @return true, if successful</span>
-<span class="source-line-no">456</span><span id="line-456">     */</span>
-<span class="source-line-no">457</span><span id="line-457">    @Override</span>
-<span class="source-line-no">458</span><span id="line-458">    public boolean equals(Object obj) {</span>
-<span class="source-line-no">459</span><span id="line-459">        if (this == obj) {</span>
-<span class="source-line-no">460</span><span id="line-460">            return true;</span>
-<span class="source-line-no">461</span><span id="line-461">        }</span>
-<span class="source-line-no">462</span><span id="line-462">        if (obj == null) {</span>
-<span class="source-line-no">463</span><span id="line-463">            return false;</span>
-<span class="source-line-no">464</span><span id="line-464">        }</span>
-<span class="source-line-no">465</span><span id="line-465">        if (getClass() != obj.getClass()) {</span>
-<span class="source-line-no">466</span><span id="line-466">            return false;</span>
-<span class="source-line-no">467</span><span id="line-467">        }</span>
-<span class="source-line-no">468</span><span id="line-468">        VmDefinition other = (VmDefinition) obj;</span>
-<span class="source-line-no">469</span><span id="line-469">        return Objects.equals(metadata.getNamespace(),</span>
-<span class="source-line-no">470</span><span id="line-470">            other.metadata.getNamespace())</span>
-<span class="source-line-no">471</span><span id="line-471">            &amp;&amp; Objects.equals(metadata.getName(), other.metadata.getName());</span>
-<span class="source-line-no">472</span><span id="line-472">    }</span>
-<span class="source-line-no">473</span><span id="line-473"></span>
-<span class="source-line-no">474</span><span id="line-474">}</span>
+<span class="source-line-no">403</span><span id="line-403">    public String name() {</span>
+<span class="source-line-no">404</span><span id="line-404">        return metadata.getName();</span>
+<span class="source-line-no">405</span><span id="line-405">    }</span>
+<span class="source-line-no">406</span><span id="line-406"></span>
+<span class="source-line-no">407</span><span id="line-407">    /**</span>
+<span class="source-line-no">408</span><span id="line-408">     * Returns the definition's namespace.</span>
+<span class="source-line-no">409</span><span id="line-409">     *</span>
+<span class="source-line-no">410</span><span id="line-410">     * @return the string</span>
+<span class="source-line-no">411</span><span id="line-411">     */</span>
+<span class="source-line-no">412</span><span id="line-412">    public String namespace() {</span>
+<span class="source-line-no">413</span><span id="line-413">        return metadata.getNamespace();</span>
+<span class="source-line-no">414</span><span id="line-414">    }</span>
+<span class="source-line-no">415</span><span id="line-415"></span>
+<span class="source-line-no">416</span><span id="line-416">    /**</span>
+<span class="source-line-no">417</span><span id="line-417">     * Return the requested VM state.</span>
+<span class="source-line-no">418</span><span id="line-418">     *</span>
+<span class="source-line-no">419</span><span id="line-419">     * @return the string</span>
+<span class="source-line-no">420</span><span id="line-420">     */</span>
+<span class="source-line-no">421</span><span id="line-421">    public RequestedVmState vmState() {</span>
+<span class="source-line-no">422</span><span id="line-422">        return fromVm("state")</span>
+<span class="source-line-no">423</span><span id="line-423">            .map(s -&gt; "Running".equals(s) ? RequestedVmState.RUNNING</span>
+<span class="source-line-no">424</span><span id="line-424">                : RequestedVmState.STOPPED)</span>
+<span class="source-line-no">425</span><span id="line-425">            .orElse(RequestedVmState.STOPPED);</span>
+<span class="source-line-no">426</span><span id="line-426">    }</span>
+<span class="source-line-no">427</span><span id="line-427"></span>
+<span class="source-line-no">428</span><span id="line-428">    /**</span>
+<span class="source-line-no">429</span><span id="line-429">     * Collect all permissions for the given user with the given roles.</span>
+<span class="source-line-no">430</span><span id="line-430">     *</span>
+<span class="source-line-no">431</span><span id="line-431">     * @param user the user</span>
+<span class="source-line-no">432</span><span id="line-432">     * @param roles the roles</span>
+<span class="source-line-no">433</span><span id="line-433">     * @return the sets the</span>
+<span class="source-line-no">434</span><span id="line-434">     */</span>
+<span class="source-line-no">435</span><span id="line-435">    public Set&lt;Permission&gt; permissionsFor(String user,</span>
+<span class="source-line-no">436</span><span id="line-436">            Collection&lt;String&gt; roles) {</span>
+<span class="source-line-no">437</span><span id="line-437">        return this.&lt;List&lt;Map&lt;String, Object&gt;&gt;&gt; fromSpec("permissions")</span>
+<span class="source-line-no">438</span><span id="line-438">            .orElse(Collections.emptyList()).stream()</span>
+<span class="source-line-no">439</span><span id="line-439">            .filter(p -&gt; DataPath.get(p, "user").map(u -&gt; u.equals(user))</span>
+<span class="source-line-no">440</span><span id="line-440">                .orElse(false)</span>
+<span class="source-line-no">441</span><span id="line-441">                || DataPath.get(p, "role").map(roles::contains).orElse(false))</span>
+<span class="source-line-no">442</span><span id="line-442">            .map(p -&gt; DataPath.&lt;List&lt;String&gt;&gt; get(p, "may")</span>
+<span class="source-line-no">443</span><span id="line-443">                .orElse(Collections.emptyList()).stream())</span>
+<span class="source-line-no">444</span><span id="line-444">            .flatMap(Function.identity())</span>
+<span class="source-line-no">445</span><span id="line-445">            .map(Permission::parse).map(Set::stream)</span>
+<span class="source-line-no">446</span><span id="line-446">            .flatMap(Function.identity()).collect(Collectors.toSet());</span>
+<span class="source-line-no">447</span><span id="line-447">    }</span>
+<span class="source-line-no">448</span><span id="line-448"></span>
+<span class="source-line-no">449</span><span id="line-449">    /**</span>
+<span class="source-line-no">450</span><span id="line-450">     * Get the display password serial.</span>
+<span class="source-line-no">451</span><span id="line-451">     *</span>
+<span class="source-line-no">452</span><span id="line-452">     * @return the optional</span>
+<span class="source-line-no">453</span><span id="line-453">     */</span>
+<span class="source-line-no">454</span><span id="line-454">    public Optional&lt;Long&gt; displayPasswordSerial() {</span>
+<span class="source-line-no">455</span><span id="line-455">        return this.&lt;Number&gt; fromStatus("displayPasswordSerial")</span>
+<span class="source-line-no">456</span><span id="line-456">            .map(Number::longValue);</span>
+<span class="source-line-no">457</span><span id="line-457">    }</span>
+<span class="source-line-no">458</span><span id="line-458"></span>
+<span class="source-line-no">459</span><span id="line-459">    /**</span>
+<span class="source-line-no">460</span><span id="line-460">     * Hash code.</span>
+<span class="source-line-no">461</span><span id="line-461">     *</span>
+<span class="source-line-no">462</span><span id="line-462">     * @return the int</span>
+<span class="source-line-no">463</span><span id="line-463">     */</span>
+<span class="source-line-no">464</span><span id="line-464">    @Override</span>
+<span class="source-line-no">465</span><span id="line-465">    public int hashCode() {</span>
+<span class="source-line-no">466</span><span id="line-466">        return Objects.hash(metadata.getNamespace(), metadata.getName());</span>
+<span class="source-line-no">467</span><span id="line-467">    }</span>
+<span class="source-line-no">468</span><span id="line-468"></span>
+<span class="source-line-no">469</span><span id="line-469">    /**</span>
+<span class="source-line-no">470</span><span id="line-470">     * Equals.</span>
+<span class="source-line-no">471</span><span id="line-471">     *</span>
+<span class="source-line-no">472</span><span id="line-472">     * @param obj the obj</span>
+<span class="source-line-no">473</span><span id="line-473">     * @return true, if successful</span>
+<span class="source-line-no">474</span><span id="line-474">     */</span>
+<span class="source-line-no">475</span><span id="line-475">    @Override</span>
+<span class="source-line-no">476</span><span id="line-476">    public boolean equals(Object obj) {</span>
+<span class="source-line-no">477</span><span id="line-477">        if (this == obj) {</span>
+<span class="source-line-no">478</span><span id="line-478">            return true;</span>
+<span class="source-line-no">479</span><span id="line-479">        }</span>
+<span class="source-line-no">480</span><span id="line-480">        if (obj == null) {</span>
+<span class="source-line-no">481</span><span id="line-481">            return false;</span>
+<span class="source-line-no">482</span><span id="line-482">        }</span>
+<span class="source-line-no">483</span><span id="line-483">        if (getClass() != obj.getClass()) {</span>
+<span class="source-line-no">484</span><span id="line-484">            return false;</span>
+<span class="source-line-no">485</span><span id="line-485">        }</span>
+<span class="source-line-no">486</span><span id="line-486">        VmDefinition other = (VmDefinition) obj;</span>
+<span class="source-line-no">487</span><span id="line-487">        return Objects.equals(metadata.getNamespace(),</span>
+<span class="source-line-no">488</span><span id="line-488">            other.metadata.getNamespace())</span>
+<span class="source-line-no">489</span><span id="line-489">            &amp;&amp; Objects.equals(metadata.getName(), other.metadata.getName());</span>
+<span class="source-line-no">490</span><span id="line-490">    }</span>
+<span class="source-line-no">491</span><span id="line-491"></span>
+<span class="source-line-no">492</span><span id="line-492">}</span>
 
 
 
