@@ -560,26 +560,26 @@
 <span class="source-line-no">546</span><span id="line-546">            .map(ConsoleUser::getName).orElse(null);</span>
 <span class="source-line-no">547</span><span id="line-547">        var roles = WebConsoleUtils.rolesFromSession(session)</span>
 <span class="source-line-no">548</span><span id="line-548">            .stream().map(ConsoleRole::getName).toList();</span>
-<span class="source-line-no">549</span><span id="line-549">        Set&lt;Permission&gt; result = new HashSet&lt;&gt;();</span>
-<span class="source-line-no">550</span><span id="line-550">        if (model.mode() == ResourceModel.Mode.POOL) {</span>
-<span class="source-line-no">551</span><span id="line-551">            if (pool == null) {</span>
-<span class="source-line-no">552</span><span id="line-552">                pool = appPipeline.fire(new GetPools()</span>
-<span class="source-line-no">553</span><span id="line-553">                    .withName(model.name())).get().stream().findFirst()</span>
-<span class="source-line-no">554</span><span id="line-554">                    .orElse(null);</span>
-<span class="source-line-no">555</span><span id="line-555">            }</span>
-<span class="source-line-no">556</span><span id="line-556">            if (pool != null) {</span>
-<span class="source-line-no">557</span><span id="line-557">                result.addAll(pool.permissionsFor(user, roles));</span>
-<span class="source-line-no">558</span><span id="line-558">            }</span>
+<span class="source-line-no">549</span><span id="line-549">        if (model.mode() == ResourceModel.Mode.POOL) {</span>
+<span class="source-line-no">550</span><span id="line-550">            if (pool == null) {</span>
+<span class="source-line-no">551</span><span id="line-551">                pool = appPipeline.fire(new GetPools()</span>
+<span class="source-line-no">552</span><span id="line-552">                    .withName(model.name())).get().stream().findFirst()</span>
+<span class="source-line-no">553</span><span id="line-553">                    .orElse(null);</span>
+<span class="source-line-no">554</span><span id="line-554">            }</span>
+<span class="source-line-no">555</span><span id="line-555">            if (pool == null) {</span>
+<span class="source-line-no">556</span><span id="line-556">                return Collections.emptySet();</span>
+<span class="source-line-no">557</span><span id="line-557">            }</span>
+<span class="source-line-no">558</span><span id="line-558">            return pool.permissionsFor(user, roles);</span>
 <span class="source-line-no">559</span><span id="line-559">        }</span>
 <span class="source-line-no">560</span><span id="line-560">        if (vmDef == null) {</span>
 <span class="source-line-no">561</span><span id="line-561">            vmDef = appPipeline.fire(new GetVms().assignedFrom(model.name())</span>
 <span class="source-line-no">562</span><span id="line-562">                .assignedTo(user)).get().stream().map(VmData::definition)</span>
 <span class="source-line-no">563</span><span id="line-563">                .findFirst().orElse(null);</span>
 <span class="source-line-no">564</span><span id="line-564">        }</span>
-<span class="source-line-no">565</span><span id="line-565">        if (vmDef != null) {</span>
-<span class="source-line-no">566</span><span id="line-566">            result.addAll(vmDef.permissionsFor(user, roles));</span>
+<span class="source-line-no">565</span><span id="line-565">        if (vmDef == null) {</span>
+<span class="source-line-no">566</span><span id="line-566">            return Collections.emptySet();</span>
 <span class="source-line-no">567</span><span id="line-567">        }</span>
-<span class="source-line-no">568</span><span id="line-568">        return result;</span>
+<span class="source-line-no">568</span><span id="line-568">        return vmDef.permissionsFor(user, roles);</span>
 <span class="source-line-no">569</span><span id="line-569">    }</span>
 <span class="source-line-no">570</span><span id="line-570"></span>
 <span class="source-line-no">571</span><span id="line-571">    private void updatePreview(ConsoleConnection channel, ResourceModel model,</span>
