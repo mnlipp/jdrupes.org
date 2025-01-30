@@ -78,153 +78,152 @@
 <span class="source-line-no">064</span><span id="line-64">     * Instantiates a new VM pool manager.</span>
 <span class="source-line-no">065</span><span id="line-65">     *</span>
 <span class="source-line-no">066</span><span id="line-66">     * @param componentChannel the component channel</span>
-<span class="source-line-no">067</span><span id="line-67">     * @param channelManager the channel manager</span>
-<span class="source-line-no">068</span><span id="line-68">     */</span>
-<span class="source-line-no">069</span><span id="line-69">    public PoolMonitor(Channel componentChannel) {</span>
-<span class="source-line-no">070</span><span id="line-70">        super(componentChannel, K8sDynamicModel.class,</span>
-<span class="source-line-no">071</span><span id="line-71">            K8sDynamicModels.class);</span>
-<span class="source-line-no">072</span><span id="line-72">    }</span>
-<span class="source-line-no">073</span><span id="line-73"></span>
-<span class="source-line-no">074</span><span id="line-74">    /**</span>
-<span class="source-line-no">075</span><span id="line-75">     * On attached.</span>
-<span class="source-line-no">076</span><span id="line-76">     *</span>
-<span class="source-line-no">077</span><span id="line-77">     * @param event the event</span>
-<span class="source-line-no">078</span><span id="line-78">     */</span>
-<span class="source-line-no">079</span><span id="line-79">    @Handler</span>
-<span class="source-line-no">080</span><span id="line-80">    @SuppressWarnings("PMD.CompareObjectsWithEquals")</span>
-<span class="source-line-no">081</span><span id="line-81">    public void onAttached(Attached event) {</span>
-<span class="source-line-no">082</span><span id="line-82">        if (event.node() == this) {</span>
-<span class="source-line-no">083</span><span id="line-83">            poolPipeline = newEventPipeline();</span>
-<span class="source-line-no">084</span><span id="line-84">        }</span>
-<span class="source-line-no">085</span><span id="line-85">    }</span>
-<span class="source-line-no">086</span><span id="line-86"></span>
-<span class="source-line-no">087</span><span id="line-87">    @Override</span>
-<span class="source-line-no">088</span><span id="line-88">    protected void prepareMonitoring() throws IOException, ApiException {</span>
-<span class="source-line-no">089</span><span id="line-89">        client(new K8sClient());</span>
-<span class="source-line-no">090</span><span id="line-90"></span>
-<span class="source-line-no">091</span><span id="line-91">        // Get all our API versions</span>
-<span class="source-line-no">092</span><span id="line-92">        var ctx = K8s.context(client(), VM_OP_GROUP, "", VM_OP_KIND_VM_POOL);</span>
-<span class="source-line-no">093</span><span id="line-93">        if (ctx.isEmpty()) {</span>
-<span class="source-line-no">094</span><span id="line-94">            logger.severe(() -&gt; "Cannot get CRD context.");</span>
-<span class="source-line-no">095</span><span id="line-95">            return;</span>
-<span class="source-line-no">096</span><span id="line-96">        }</span>
-<span class="source-line-no">097</span><span id="line-97">        context(ctx.get());</span>
-<span class="source-line-no">098</span><span id="line-98">    }</span>
-<span class="source-line-no">099</span><span id="line-99"></span>
-<span class="source-line-no">100</span><span id="line-100">    @Override</span>
-<span class="source-line-no">101</span><span id="line-101">    protected void handleChange(K8sClient client,</span>
-<span class="source-line-no">102</span><span id="line-102">            Watch.Response&lt;K8sDynamicModel&gt; response) {</span>
-<span class="source-line-no">103</span><span id="line-103"></span>
-<span class="source-line-no">104</span><span id="line-104">        var type = ResponseType.valueOf(response.type);</span>
-<span class="source-line-no">105</span><span id="line-105">        var poolName = response.object.metadata().getName();</span>
-<span class="source-line-no">106</span><span id="line-106"></span>
-<span class="source-line-no">107</span><span id="line-107">        // When pool is deleted, save VMs in pending</span>
-<span class="source-line-no">108</span><span id="line-108">        if (type == ResponseType.DELETED) {</span>
-<span class="source-line-no">109</span><span id="line-109">            Optional.ofNullable(pools.get(poolName)).ifPresent(pool -&gt; {</span>
-<span class="source-line-no">110</span><span id="line-110">                pool.setDefined(false);</span>
-<span class="source-line-no">111</span><span id="line-111">                if (pool.vms().isEmpty()) {</span>
-<span class="source-line-no">112</span><span id="line-112">                    pools.remove(poolName);</span>
-<span class="source-line-no">113</span><span id="line-113">                }</span>
-<span class="source-line-no">114</span><span id="line-114">                poolPipeline.fire(new VmPoolChanged(pool, true));</span>
-<span class="source-line-no">115</span><span id="line-115">            });</span>
-<span class="source-line-no">116</span><span id="line-116">            return;</span>
-<span class="source-line-no">117</span><span id="line-117">        }</span>
-<span class="source-line-no">118</span><span id="line-118"></span>
-<span class="source-line-no">119</span><span id="line-119">        // Get full definition</span>
-<span class="source-line-no">120</span><span id="line-120">        var poolModel = response.object;</span>
-<span class="source-line-no">121</span><span id="line-121">        if (poolModel.data() == null) {</span>
-<span class="source-line-no">122</span><span id="line-122">            // ADDED event does not provide data, see</span>
-<span class="source-line-no">123</span><span id="line-123">            // https://github.com/kubernetes-client/java/issues/3215</span>
-<span class="source-line-no">124</span><span id="line-124">            try {</span>
-<span class="source-line-no">125</span><span id="line-125">                poolModel = K8sDynamicStub.get(client(), context(), namespace(),</span>
-<span class="source-line-no">126</span><span id="line-126">                    poolModel.metadata().getName()).model().orElse(null);</span>
-<span class="source-line-no">127</span><span id="line-127">            } catch (ApiException e) {</span>
-<span class="source-line-no">128</span><span id="line-128">                return;</span>
-<span class="source-line-no">129</span><span id="line-129">            }</span>
-<span class="source-line-no">130</span><span id="line-130">        }</span>
-<span class="source-line-no">131</span><span id="line-131"></span>
-<span class="source-line-no">132</span><span id="line-132">        // Get pool and merge changes</span>
-<span class="source-line-no">133</span><span id="line-133">        var vmPool = pools.computeIfAbsent(poolName, k -&gt; new VmPool(poolName));</span>
-<span class="source-line-no">134</span><span id="line-134">        var newData = client().getJSON().getGson().fromJson(</span>
-<span class="source-line-no">135</span><span id="line-135">            GsonPtr.to(poolModel.data()).to("spec").get(), VmPool.class);</span>
-<span class="source-line-no">136</span><span id="line-136">        vmPool.setRetention(newData.retention());</span>
-<span class="source-line-no">137</span><span id="line-137">        vmPool.setPermissions(newData.permissions());</span>
-<span class="source-line-no">138</span><span id="line-138">        vmPool.setDefined(true);</span>
-<span class="source-line-no">139</span><span id="line-139">        poolPipeline.fire(new VmPoolChanged(vmPool));</span>
-<span class="source-line-no">140</span><span id="line-140">    }</span>
-<span class="source-line-no">141</span><span id="line-141"></span>
-<span class="source-line-no">142</span><span id="line-142">    /**</span>
-<span class="source-line-no">143</span><span id="line-143">     * Track VM definition changes.</span>
-<span class="source-line-no">144</span><span id="line-144">     *</span>
-<span class="source-line-no">145</span><span id="line-145">     * @param event the event</span>
-<span class="source-line-no">146</span><span id="line-146">     * @throws ApiException </span>
-<span class="source-line-no">147</span><span id="line-147">     */</span>
-<span class="source-line-no">148</span><span id="line-148">    @Handler</span>
-<span class="source-line-no">149</span><span id="line-149">    public void onVmDefChanged(VmDefChanged event) throws ApiException {</span>
-<span class="source-line-no">150</span><span id="line-150">        final var vmDef = event.vmDefinition();</span>
-<span class="source-line-no">151</span><span id="line-151">        final String vmName = vmDef.name();</span>
-<span class="source-line-no">152</span><span id="line-152">        switch (event.type()) {</span>
-<span class="source-line-no">153</span><span id="line-153">        case ADDED:</span>
-<span class="source-line-no">154</span><span id="line-154">            vmDef.&lt;List&lt;String&gt;&gt; fromSpec("pools")</span>
-<span class="source-line-no">155</span><span id="line-155">                .orElse(Collections.emptyList()).stream().forEach(p -&gt; {</span>
-<span class="source-line-no">156</span><span id="line-156">                    pools.computeIfAbsent(p, k -&gt; new VmPool(p))</span>
-<span class="source-line-no">157</span><span id="line-157">                        .vms().add(vmName);</span>
-<span class="source-line-no">158</span><span id="line-158">                    poolPipeline.fire(new VmPoolChanged(pools.get(p)));</span>
-<span class="source-line-no">159</span><span id="line-159">                });</span>
-<span class="source-line-no">160</span><span id="line-160">            break;</span>
-<span class="source-line-no">161</span><span id="line-161">        case DELETED:</span>
-<span class="source-line-no">162</span><span id="line-162">            pools.values().stream().forEach(p -&gt; {</span>
-<span class="source-line-no">163</span><span id="line-163">                if (p.vms().remove(vmName)) {</span>
-<span class="source-line-no">164</span><span id="line-164">                    poolPipeline.fire(new VmPoolChanged(p));</span>
-<span class="source-line-no">165</span><span id="line-165">                }</span>
-<span class="source-line-no">166</span><span id="line-166">            });</span>
-<span class="source-line-no">167</span><span id="line-167">            return;</span>
-<span class="source-line-no">168</span><span id="line-168">        default:</span>
-<span class="source-line-no">169</span><span id="line-169">            break;</span>
-<span class="source-line-no">170</span><span id="line-170">        }</span>
-<span class="source-line-no">171</span><span id="line-171"></span>
-<span class="source-line-no">172</span><span id="line-172">        // Sync last usage to console state change if user matches</span>
-<span class="source-line-no">173</span><span id="line-173">        if (vmDef.assignedTo()</span>
-<span class="source-line-no">174</span><span id="line-174">            .map(at -&gt; at.equals(vmDef.consoleUser().orElse(null)))</span>
-<span class="source-line-no">175</span><span id="line-175">            .orElse(true)) {</span>
-<span class="source-line-no">176</span><span id="line-176">            return;</span>
-<span class="source-line-no">177</span><span id="line-177">        }</span>
-<span class="source-line-no">178</span><span id="line-178"></span>
-<span class="source-line-no">179</span><span id="line-179">        var ccChange = vmDef.condition("ConsoleConnected")</span>
-<span class="source-line-no">180</span><span id="line-180">            .map(cc -&gt; cc.getLastTransitionTime().toInstant());</span>
-<span class="source-line-no">181</span><span id="line-181">        if (ccChange</span>
-<span class="source-line-no">182</span><span id="line-182">            .map(tt -&gt; vmDef.assignmentLastUsed().map(alu -&gt; alu.isAfter(tt))</span>
-<span class="source-line-no">183</span><span id="line-183">                .orElse(true))</span>
-<span class="source-line-no">184</span><span id="line-184">            .orElse(true)) {</span>
-<span class="source-line-no">185</span><span id="line-185">            return;</span>
-<span class="source-line-no">186</span><span id="line-186">        }</span>
-<span class="source-line-no">187</span><span id="line-187">        var vmStub = VmDefinitionStub.get(client(),</span>
-<span class="source-line-no">188</span><span id="line-188">            new GroupVersionKind(VM_OP_GROUP, "", VM_OP_KIND_VM),</span>
-<span class="source-line-no">189</span><span id="line-189">            vmDef.namespace(), vmDef.name());</span>
-<span class="source-line-no">190</span><span id="line-190">        vmStub.updateStatus(from -&gt; {</span>
-<span class="source-line-no">191</span><span id="line-191">            JsonObject status = from.status();</span>
-<span class="source-line-no">192</span><span id="line-192">            var assignment = GsonPtr.to(status).to("assignment");</span>
-<span class="source-line-no">193</span><span id="line-193">            assignment.set("lastUsed", ccChange.get().toString());</span>
-<span class="source-line-no">194</span><span id="line-194">            return status;</span>
-<span class="source-line-no">195</span><span id="line-195">        });</span>
-<span class="source-line-no">196</span><span id="line-196">    }</span>
-<span class="source-line-no">197</span><span id="line-197"></span>
-<span class="source-line-no">198</span><span id="line-198">    /**</span>
-<span class="source-line-no">199</span><span id="line-199">     * Return the requested pools.</span>
-<span class="source-line-no">200</span><span id="line-200">     *</span>
-<span class="source-line-no">201</span><span id="line-201">     * @param event the event</span>
-<span class="source-line-no">202</span><span id="line-202">     */</span>
-<span class="source-line-no">203</span><span id="line-203">    @Handler</span>
-<span class="source-line-no">204</span><span id="line-204">    public void onGetPools(GetPools event) {</span>
-<span class="source-line-no">205</span><span id="line-205">        event.setResult(pools.values().stream().filter(VmPool::isDefined)</span>
-<span class="source-line-no">206</span><span id="line-206">            .filter(p -&gt; event.name().isEmpty()</span>
-<span class="source-line-no">207</span><span id="line-207">                || p.name().equals(event.name().get()))</span>
-<span class="source-line-no">208</span><span id="line-208">            .filter(p -&gt; event.forUser().isEmpty() &amp;&amp; event.forRoles().isEmpty()</span>
-<span class="source-line-no">209</span><span id="line-209">                || !p.permissionsFor(event.forUser().orElse(null),</span>
-<span class="source-line-no">210</span><span id="line-210">                    event.forRoles()).isEmpty())</span>
-<span class="source-line-no">211</span><span id="line-211">            .toList());</span>
-<span class="source-line-no">212</span><span id="line-212">    }</span>
-<span class="source-line-no">213</span><span id="line-213">}</span>
+<span class="source-line-no">067</span><span id="line-67">     */</span>
+<span class="source-line-no">068</span><span id="line-68">    public PoolMonitor(Channel componentChannel) {</span>
+<span class="source-line-no">069</span><span id="line-69">        super(componentChannel, K8sDynamicModel.class,</span>
+<span class="source-line-no">070</span><span id="line-70">            K8sDynamicModels.class);</span>
+<span class="source-line-no">071</span><span id="line-71">    }</span>
+<span class="source-line-no">072</span><span id="line-72"></span>
+<span class="source-line-no">073</span><span id="line-73">    /**</span>
+<span class="source-line-no">074</span><span id="line-74">     * On attached.</span>
+<span class="source-line-no">075</span><span id="line-75">     *</span>
+<span class="source-line-no">076</span><span id="line-76">     * @param event the event</span>
+<span class="source-line-no">077</span><span id="line-77">     */</span>
+<span class="source-line-no">078</span><span id="line-78">    @Handler</span>
+<span class="source-line-no">079</span><span id="line-79">    @SuppressWarnings("PMD.CompareObjectsWithEquals")</span>
+<span class="source-line-no">080</span><span id="line-80">    public void onAttached(Attached event) {</span>
+<span class="source-line-no">081</span><span id="line-81">        if (event.node() == this) {</span>
+<span class="source-line-no">082</span><span id="line-82">            poolPipeline = newEventPipeline();</span>
+<span class="source-line-no">083</span><span id="line-83">        }</span>
+<span class="source-line-no">084</span><span id="line-84">    }</span>
+<span class="source-line-no">085</span><span id="line-85"></span>
+<span class="source-line-no">086</span><span id="line-86">    @Override</span>
+<span class="source-line-no">087</span><span id="line-87">    protected void prepareMonitoring() throws IOException, ApiException {</span>
+<span class="source-line-no">088</span><span id="line-88">        client(new K8sClient());</span>
+<span class="source-line-no">089</span><span id="line-89"></span>
+<span class="source-line-no">090</span><span id="line-90">        // Get all our API versions</span>
+<span class="source-line-no">091</span><span id="line-91">        var ctx = K8s.context(client(), VM_OP_GROUP, "", VM_OP_KIND_VM_POOL);</span>
+<span class="source-line-no">092</span><span id="line-92">        if (ctx.isEmpty()) {</span>
+<span class="source-line-no">093</span><span id="line-93">            logger.severe(() -&gt; "Cannot get CRD context.");</span>
+<span class="source-line-no">094</span><span id="line-94">            return;</span>
+<span class="source-line-no">095</span><span id="line-95">        }</span>
+<span class="source-line-no">096</span><span id="line-96">        context(ctx.get());</span>
+<span class="source-line-no">097</span><span id="line-97">    }</span>
+<span class="source-line-no">098</span><span id="line-98"></span>
+<span class="source-line-no">099</span><span id="line-99">    @Override</span>
+<span class="source-line-no">100</span><span id="line-100">    protected void handleChange(K8sClient client,</span>
+<span class="source-line-no">101</span><span id="line-101">            Watch.Response&lt;K8sDynamicModel&gt; response) {</span>
+<span class="source-line-no">102</span><span id="line-102"></span>
+<span class="source-line-no">103</span><span id="line-103">        var type = ResponseType.valueOf(response.type);</span>
+<span class="source-line-no">104</span><span id="line-104">        var poolName = response.object.metadata().getName();</span>
+<span class="source-line-no">105</span><span id="line-105"></span>
+<span class="source-line-no">106</span><span id="line-106">        // When pool is deleted, save VMs in pending</span>
+<span class="source-line-no">107</span><span id="line-107">        if (type == ResponseType.DELETED) {</span>
+<span class="source-line-no">108</span><span id="line-108">            Optional.ofNullable(pools.get(poolName)).ifPresent(pool -&gt; {</span>
+<span class="source-line-no">109</span><span id="line-109">                pool.setDefined(false);</span>
+<span class="source-line-no">110</span><span id="line-110">                if (pool.vms().isEmpty()) {</span>
+<span class="source-line-no">111</span><span id="line-111">                    pools.remove(poolName);</span>
+<span class="source-line-no">112</span><span id="line-112">                }</span>
+<span class="source-line-no">113</span><span id="line-113">                poolPipeline.fire(new VmPoolChanged(pool, true));</span>
+<span class="source-line-no">114</span><span id="line-114">            });</span>
+<span class="source-line-no">115</span><span id="line-115">            return;</span>
+<span class="source-line-no">116</span><span id="line-116">        }</span>
+<span class="source-line-no">117</span><span id="line-117"></span>
+<span class="source-line-no">118</span><span id="line-118">        // Get full definition</span>
+<span class="source-line-no">119</span><span id="line-119">        var poolModel = response.object;</span>
+<span class="source-line-no">120</span><span id="line-120">        if (poolModel.data() == null) {</span>
+<span class="source-line-no">121</span><span id="line-121">            // ADDED event does not provide data, see</span>
+<span class="source-line-no">122</span><span id="line-122">            // https://github.com/kubernetes-client/java/issues/3215</span>
+<span class="source-line-no">123</span><span id="line-123">            try {</span>
+<span class="source-line-no">124</span><span id="line-124">                poolModel = K8sDynamicStub.get(client(), context(), namespace(),</span>
+<span class="source-line-no">125</span><span id="line-125">                    poolModel.metadata().getName()).model().orElse(null);</span>
+<span class="source-line-no">126</span><span id="line-126">            } catch (ApiException e) {</span>
+<span class="source-line-no">127</span><span id="line-127">                return;</span>
+<span class="source-line-no">128</span><span id="line-128">            }</span>
+<span class="source-line-no">129</span><span id="line-129">        }</span>
+<span class="source-line-no">130</span><span id="line-130"></span>
+<span class="source-line-no">131</span><span id="line-131">        // Get pool and merge changes</span>
+<span class="source-line-no">132</span><span id="line-132">        var vmPool = pools.computeIfAbsent(poolName, k -&gt; new VmPool(poolName));</span>
+<span class="source-line-no">133</span><span id="line-133">        var newData = client().getJSON().getGson().fromJson(</span>
+<span class="source-line-no">134</span><span id="line-134">            GsonPtr.to(poolModel.data()).to("spec").get(), VmPool.class);</span>
+<span class="source-line-no">135</span><span id="line-135">        vmPool.setRetention(newData.retention());</span>
+<span class="source-line-no">136</span><span id="line-136">        vmPool.setPermissions(newData.permissions());</span>
+<span class="source-line-no">137</span><span id="line-137">        vmPool.setDefined(true);</span>
+<span class="source-line-no">138</span><span id="line-138">        poolPipeline.fire(new VmPoolChanged(vmPool));</span>
+<span class="source-line-no">139</span><span id="line-139">    }</span>
+<span class="source-line-no">140</span><span id="line-140"></span>
+<span class="source-line-no">141</span><span id="line-141">    /**</span>
+<span class="source-line-no">142</span><span id="line-142">     * Track VM definition changes.</span>
+<span class="source-line-no">143</span><span id="line-143">     *</span>
+<span class="source-line-no">144</span><span id="line-144">     * @param event the event</span>
+<span class="source-line-no">145</span><span id="line-145">     * @throws ApiException </span>
+<span class="source-line-no">146</span><span id="line-146">     */</span>
+<span class="source-line-no">147</span><span id="line-147">    @Handler</span>
+<span class="source-line-no">148</span><span id="line-148">    public void onVmDefChanged(VmDefChanged event) throws ApiException {</span>
+<span class="source-line-no">149</span><span id="line-149">        final var vmDef = event.vmDefinition();</span>
+<span class="source-line-no">150</span><span id="line-150">        final String vmName = vmDef.name();</span>
+<span class="source-line-no">151</span><span id="line-151">        switch (event.type()) {</span>
+<span class="source-line-no">152</span><span id="line-152">        case ADDED:</span>
+<span class="source-line-no">153</span><span id="line-153">            vmDef.&lt;List&lt;String&gt;&gt; fromSpec("pools")</span>
+<span class="source-line-no">154</span><span id="line-154">                .orElse(Collections.emptyList()).stream().forEach(p -&gt; {</span>
+<span class="source-line-no">155</span><span id="line-155">                    pools.computeIfAbsent(p, k -&gt; new VmPool(p))</span>
+<span class="source-line-no">156</span><span id="line-156">                        .vms().add(vmName);</span>
+<span class="source-line-no">157</span><span id="line-157">                    poolPipeline.fire(new VmPoolChanged(pools.get(p)));</span>
+<span class="source-line-no">158</span><span id="line-158">                });</span>
+<span class="source-line-no">159</span><span id="line-159">            break;</span>
+<span class="source-line-no">160</span><span id="line-160">        case DELETED:</span>
+<span class="source-line-no">161</span><span id="line-161">            pools.values().stream().forEach(p -&gt; {</span>
+<span class="source-line-no">162</span><span id="line-162">                if (p.vms().remove(vmName)) {</span>
+<span class="source-line-no">163</span><span id="line-163">                    poolPipeline.fire(new VmPoolChanged(p));</span>
+<span class="source-line-no">164</span><span id="line-164">                }</span>
+<span class="source-line-no">165</span><span id="line-165">            });</span>
+<span class="source-line-no">166</span><span id="line-166">            return;</span>
+<span class="source-line-no">167</span><span id="line-167">        default:</span>
+<span class="source-line-no">168</span><span id="line-168">            break;</span>
+<span class="source-line-no">169</span><span id="line-169">        }</span>
+<span class="source-line-no">170</span><span id="line-170"></span>
+<span class="source-line-no">171</span><span id="line-171">        // Sync last usage to console state change if user matches</span>
+<span class="source-line-no">172</span><span id="line-172">        if (vmDef.assignedTo()</span>
+<span class="source-line-no">173</span><span id="line-173">            .map(at -&gt; at.equals(vmDef.consoleUser().orElse(null)))</span>
+<span class="source-line-no">174</span><span id="line-174">            .orElse(true)) {</span>
+<span class="source-line-no">175</span><span id="line-175">            return;</span>
+<span class="source-line-no">176</span><span id="line-176">        }</span>
+<span class="source-line-no">177</span><span id="line-177"></span>
+<span class="source-line-no">178</span><span id="line-178">        var ccChange = vmDef.condition("ConsoleConnected")</span>
+<span class="source-line-no">179</span><span id="line-179">            .map(cc -&gt; cc.getLastTransitionTime().toInstant());</span>
+<span class="source-line-no">180</span><span id="line-180">        if (ccChange</span>
+<span class="source-line-no">181</span><span id="line-181">            .map(tt -&gt; vmDef.assignmentLastUsed().map(alu -&gt; alu.isAfter(tt))</span>
+<span class="source-line-no">182</span><span id="line-182">                .orElse(true))</span>
+<span class="source-line-no">183</span><span id="line-183">            .orElse(true)) {</span>
+<span class="source-line-no">184</span><span id="line-184">            return;</span>
+<span class="source-line-no">185</span><span id="line-185">        }</span>
+<span class="source-line-no">186</span><span id="line-186">        var vmStub = VmDefinitionStub.get(client(),</span>
+<span class="source-line-no">187</span><span id="line-187">            new GroupVersionKind(VM_OP_GROUP, "", VM_OP_KIND_VM),</span>
+<span class="source-line-no">188</span><span id="line-188">            vmDef.namespace(), vmDef.name());</span>
+<span class="source-line-no">189</span><span id="line-189">        vmStub.updateStatus(from -&gt; {</span>
+<span class="source-line-no">190</span><span id="line-190">            JsonObject status = from.status();</span>
+<span class="source-line-no">191</span><span id="line-191">            var assignment = GsonPtr.to(status).to("assignment");</span>
+<span class="source-line-no">192</span><span id="line-192">            assignment.set("lastUsed", ccChange.get().toString());</span>
+<span class="source-line-no">193</span><span id="line-193">            return status;</span>
+<span class="source-line-no">194</span><span id="line-194">        });</span>
+<span class="source-line-no">195</span><span id="line-195">    }</span>
+<span class="source-line-no">196</span><span id="line-196"></span>
+<span class="source-line-no">197</span><span id="line-197">    /**</span>
+<span class="source-line-no">198</span><span id="line-198">     * Return the requested pools.</span>
+<span class="source-line-no">199</span><span id="line-199">     *</span>
+<span class="source-line-no">200</span><span id="line-200">     * @param event the event</span>
+<span class="source-line-no">201</span><span id="line-201">     */</span>
+<span class="source-line-no">202</span><span id="line-202">    @Handler</span>
+<span class="source-line-no">203</span><span id="line-203">    public void onGetPools(GetPools event) {</span>
+<span class="source-line-no">204</span><span id="line-204">        event.setResult(pools.values().stream().filter(VmPool::isDefined)</span>
+<span class="source-line-no">205</span><span id="line-205">            .filter(p -&gt; event.name().isEmpty()</span>
+<span class="source-line-no">206</span><span id="line-206">                || p.name().equals(event.name().get()))</span>
+<span class="source-line-no">207</span><span id="line-207">            .filter(p -&gt; event.forUser().isEmpty() &amp;&amp; event.forRoles().isEmpty()</span>
+<span class="source-line-no">208</span><span id="line-208">                || !p.permissionsFor(event.forUser().orElse(null),</span>
+<span class="source-line-no">209</span><span id="line-209">                    event.forRoles()).isEmpty())</span>
+<span class="source-line-no">210</span><span id="line-210">            .toList());</span>
+<span class="source-line-no">211</span><span id="line-211">    }</span>
+<span class="source-line-no">212</span><span id="line-212">}</span>
 
 
 
