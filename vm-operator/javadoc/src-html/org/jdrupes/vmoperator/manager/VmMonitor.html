@@ -278,113 +278,109 @@
 <span class="source-line-no">264</span><span id="line-264">    @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")</span>
 <span class="source-line-no">265</span><span id="line-265">    public void onAssignVm(AssignVm event)</span>
 <span class="source-line-no">266</span><span id="line-266">            throws ApiException, InterruptedException {</span>
-<span class="source-line-no">267</span><span id="line-267">        VmPool vmPool = null;</span>
-<span class="source-line-no">268</span><span id="line-268">        while (true) {</span>
-<span class="source-line-no">269</span><span id="line-269">            // Search for existing assignment.</span>
-<span class="source-line-no">270</span><span id="line-270">            var assignedVm = channelManager.channels().stream()</span>
-<span class="source-line-no">271</span><span id="line-271">                .filter(c -&gt; c.vmDefinition().assignedFrom()</span>
-<span class="source-line-no">272</span><span id="line-272">                    .map(p -&gt; p.equals(event.fromPool())).orElse(false))</span>
-<span class="source-line-no">273</span><span id="line-273">                .filter(c -&gt; c.vmDefinition().assignedTo()</span>
-<span class="source-line-no">274</span><span id="line-274">                    .map(u -&gt; u.equals(event.toUser())).orElse(false))</span>
-<span class="source-line-no">275</span><span id="line-275">                .findFirst();</span>
-<span class="source-line-no">276</span><span id="line-276">            if (assignedVm.isPresent()) {</span>
-<span class="source-line-no">277</span><span id="line-277">                var vmDef = assignedVm.get().vmDefinition();</span>
-<span class="source-line-no">278</span><span id="line-278">                event.setResult(new VmData(vmDef, assignedVm.get()));</span>
-<span class="source-line-no">279</span><span id="line-279">                return;</span>
-<span class="source-line-no">280</span><span id="line-280">            }</span>
-<span class="source-line-no">281</span><span id="line-281"></span>
-<span class="source-line-no">282</span><span id="line-282">            // Get the pool definition for retention time calculations</span>
-<span class="source-line-no">283</span><span id="line-283">            if (vmPool == null) {</span>
-<span class="source-line-no">284</span><span id="line-284">                vmPool = newEventPipeline().fire(new GetPools()</span>
-<span class="source-line-no">285</span><span id="line-285">                    .withName(event.fromPool())).get().stream().findFirst()</span>
-<span class="source-line-no">286</span><span id="line-286">                    .orElse(null);</span>
-<span class="source-line-no">287</span><span id="line-287">                if (vmPool == null) {</span>
-<span class="source-line-no">288</span><span id="line-288">                    return;</span>
-<span class="source-line-no">289</span><span id="line-289">                }</span>
-<span class="source-line-no">290</span><span id="line-290">            }</span>
-<span class="source-line-no">291</span><span id="line-291"></span>
-<span class="source-line-no">292</span><span id="line-292">            // Find available VM.</span>
-<span class="source-line-no">293</span><span id="line-293">            var pool = vmPool;</span>
-<span class="source-line-no">294</span><span id="line-294">            assignedVm = channelManager.channels().stream()</span>
-<span class="source-line-no">295</span><span id="line-295">                .filter(c -&gt; isAssignable(pool, c.vmDefinition()))</span>
-<span class="source-line-no">296</span><span id="line-296">                .sorted(Comparator.comparing((VmChannel c) -&gt; c.vmDefinition()</span>
-<span class="source-line-no">297</span><span id="line-297">                    .assignmentLastUsed().orElse(Instant.ofEpochSecond(0)))</span>
-<span class="source-line-no">298</span><span id="line-298">                    .thenComparing(preferRunning))</span>
-<span class="source-line-no">299</span><span id="line-299">                .findFirst();</span>
-<span class="source-line-no">300</span><span id="line-300"></span>
-<span class="source-line-no">301</span><span id="line-301">            // None found</span>
-<span class="source-line-no">302</span><span id="line-302">            if (assignedVm.isEmpty()) {</span>
-<span class="source-line-no">303</span><span id="line-303">                return;</span>
-<span class="source-line-no">304</span><span id="line-304">            }</span>
-<span class="source-line-no">305</span><span id="line-305"></span>
-<span class="source-line-no">306</span><span id="line-306">            // Assign to user</span>
-<span class="source-line-no">307</span><span id="line-307">            var vmDef = assignedVm.get().vmDefinition();</span>
-<span class="source-line-no">308</span><span id="line-308">            var vmStub = VmDefinitionStub.get(client(),</span>
-<span class="source-line-no">309</span><span id="line-309">                new GroupVersionKind(VM_OP_GROUP, "", VM_OP_KIND_VM),</span>
-<span class="source-line-no">310</span><span id="line-310">                vmDef.namespace(), vmDef.name());</span>
-<span class="source-line-no">311</span><span id="line-311">            vmStub.updateStatus(from -&gt; {</span>
-<span class="source-line-no">312</span><span id="line-312">                JsonObject status = from.status();</span>
-<span class="source-line-no">313</span><span id="line-313">                var assignment = GsonPtr.to(status).to("assignment");</span>
-<span class="source-line-no">314</span><span id="line-314">                assignment.set("pool", event.fromPool());</span>
-<span class="source-line-no">315</span><span id="line-315">                assignment.set("user", event.toUser());</span>
-<span class="source-line-no">316</span><span id="line-316">                assignment.set("lastUsed", Instant.now().toString());</span>
-<span class="source-line-no">317</span><span id="line-317">                return status;</span>
-<span class="source-line-no">318</span><span id="line-318">            });</span>
-<span class="source-line-no">319</span><span id="line-319"></span>
-<span class="source-line-no">320</span><span id="line-320">            // Make sure that a newly assigned VM is running.</span>
-<span class="source-line-no">321</span><span id="line-321">            fire(new ModifyVm(vmDef.name(), "state", "Running",</span>
-<span class="source-line-no">322</span><span id="line-322">                assignedVm.get()));</span>
-<span class="source-line-no">323</span><span id="line-323">        }</span>
-<span class="source-line-no">324</span><span id="line-324">    }</span>
-<span class="source-line-no">325</span><span id="line-325"></span>
-<span class="source-line-no">326</span><span id="line-326">    private static Comparator&lt;VmChannel&gt; preferRunning</span>
-<span class="source-line-no">327</span><span id="line-327">        = new Comparator&lt;&gt;() {</span>
-<span class="source-line-no">328</span><span id="line-328">            @Override</span>
-<span class="source-line-no">329</span><span id="line-329">            public int compare(VmChannel ch1, VmChannel ch2) {</span>
-<span class="source-line-no">330</span><span id="line-330">                if (ch1.vmDefinition().conditionStatus("Running").orElse(false)</span>
-<span class="source-line-no">331</span><span id="line-331">                    &amp;&amp; !ch2.vmDefinition().conditionStatus("Running")</span>
-<span class="source-line-no">332</span><span id="line-332">                        .orElse(false)) {</span>
-<span class="source-line-no">333</span><span id="line-333">                    return -1;</span>
-<span class="source-line-no">334</span><span id="line-334">                }</span>
-<span class="source-line-no">335</span><span id="line-335">                return 0;</span>
-<span class="source-line-no">336</span><span id="line-336">            }</span>
-<span class="source-line-no">337</span><span id="line-337">        };</span>
-<span class="source-line-no">338</span><span id="line-338"></span>
-<span class="source-line-no">339</span><span id="line-339">    @SuppressWarnings("PMD.SimplifyBooleanReturns")</span>
-<span class="source-line-no">340</span><span id="line-340">    private boolean isAssignable(VmPool pool, VmDefinition vmDef) {</span>
-<span class="source-line-no">341</span><span id="line-341">        // Check if the VM is in the pool</span>
-<span class="source-line-no">342</span><span id="line-342">        if (!vmDef.pools().contains(pool.name())) {</span>
-<span class="source-line-no">343</span><span id="line-343">            return false;</span>
-<span class="source-line-no">344</span><span id="line-344">        }</span>
-<span class="source-line-no">345</span><span id="line-345"></span>
-<span class="source-line-no">346</span><span id="line-346">        // Check if the VM is not in use</span>
-<span class="source-line-no">347</span><span id="line-347">        if (vmDef.consoleConnected()) {</span>
-<span class="source-line-no">348</span><span id="line-348">            return false;</span>
-<span class="source-line-no">349</span><span id="line-349">        }</span>
-<span class="source-line-no">350</span><span id="line-350"></span>
-<span class="source-line-no">351</span><span id="line-351">        // If not assigned, it's usable</span>
-<span class="source-line-no">352</span><span id="line-352">        if (vmDef.assignedTo().isEmpty()) {</span>
-<span class="source-line-no">353</span><span id="line-353">            return true;</span>
-<span class="source-line-no">354</span><span id="line-354">        }</span>
-<span class="source-line-no">355</span><span id="line-355"></span>
-<span class="source-line-no">356</span><span id="line-356">        // Check if it is to be retained</span>
-<span class="source-line-no">357</span><span id="line-357">        if (vmDef.assignmentLastUsed()</span>
-<span class="source-line-no">358</span><span id="line-358">            .map(lu -&gt; pool.retainUntil(lu))</span>
-<span class="source-line-no">359</span><span id="line-359">            .map(ru -&gt; Instant.now().isBefore(ru)).orElse(false)) {</span>
-<span class="source-line-no">360</span><span id="line-360">            return false;</span>
-<span class="source-line-no">361</span><span id="line-361">        }</span>
-<span class="source-line-no">362</span><span id="line-362"></span>
-<span class="source-line-no">363</span><span id="line-363">        // Additional check in case lastUsed has not been updated</span>
-<span class="source-line-no">364</span><span id="line-364">        // by PoolMonitor#onVmDefChanged() yet ("race condition")</span>
-<span class="source-line-no">365</span><span id="line-365">        if (vmDef.condition("ConsoleConnected")</span>
-<span class="source-line-no">366</span><span id="line-366">            .map(cc -&gt; cc.getLastTransitionTime().toInstant())</span>
-<span class="source-line-no">367</span><span id="line-367">            .map(t -&gt; pool.retainUntil(t))</span>
-<span class="source-line-no">368</span><span id="line-368">            .map(ru -&gt; Instant.now().isBefore(ru)).orElse(false)) {</span>
-<span class="source-line-no">369</span><span id="line-369">            return false;</span>
-<span class="source-line-no">370</span><span id="line-370">        }</span>
-<span class="source-line-no">371</span><span id="line-371">        return true;</span>
-<span class="source-line-no">372</span><span id="line-372">    }</span>
-<span class="source-line-no">373</span><span id="line-373">}</span>
+<span class="source-line-no">267</span><span id="line-267">        // Search for existing assignment.</span>
+<span class="source-line-no">268</span><span id="line-268">        var assignedVm = channelManager.channels().stream()</span>
+<span class="source-line-no">269</span><span id="line-269">            .filter(c -&gt; c.vmDefinition().assignedFrom()</span>
+<span class="source-line-no">270</span><span id="line-270">                .map(p -&gt; p.equals(event.fromPool())).orElse(false))</span>
+<span class="source-line-no">271</span><span id="line-271">            .filter(c -&gt; c.vmDefinition().assignedTo()</span>
+<span class="source-line-no">272</span><span id="line-272">                .map(u -&gt; u.equals(event.toUser())).orElse(false))</span>
+<span class="source-line-no">273</span><span id="line-273">            .findFirst();</span>
+<span class="source-line-no">274</span><span id="line-274">        if (assignedVm.isPresent()) {</span>
+<span class="source-line-no">275</span><span id="line-275">            var vmDef = assignedVm.get().vmDefinition();</span>
+<span class="source-line-no">276</span><span id="line-276">            event.setResult(new VmData(vmDef, assignedVm.get()));</span>
+<span class="source-line-no">277</span><span id="line-277">            return;</span>
+<span class="source-line-no">278</span><span id="line-278">        }</span>
+<span class="source-line-no">279</span><span id="line-279"></span>
+<span class="source-line-no">280</span><span id="line-280">        // Get the pool definition for retention time calculations</span>
+<span class="source-line-no">281</span><span id="line-281">        VmPool vmPool = newEventPipeline().fire(new GetPools()</span>
+<span class="source-line-no">282</span><span id="line-282">            .withName(event.fromPool())).get().stream().findFirst()</span>
+<span class="source-line-no">283</span><span id="line-283">            .orElse(null);</span>
+<span class="source-line-no">284</span><span id="line-284">        if (vmPool == null) {</span>
+<span class="source-line-no">285</span><span id="line-285">            return;</span>
+<span class="source-line-no">286</span><span id="line-286">        }</span>
+<span class="source-line-no">287</span><span id="line-287"></span>
+<span class="source-line-no">288</span><span id="line-288">        // Find available VM.</span>
+<span class="source-line-no">289</span><span id="line-289">        var pool = vmPool;</span>
+<span class="source-line-no">290</span><span id="line-290">        assignedVm = channelManager.channels().stream()</span>
+<span class="source-line-no">291</span><span id="line-291">            .filter(c -&gt; isAssignable(pool, c.vmDefinition()))</span>
+<span class="source-line-no">292</span><span id="line-292">            .sorted(Comparator.comparing((VmChannel c) -&gt; c.vmDefinition()</span>
+<span class="source-line-no">293</span><span id="line-293">                .assignmentLastUsed().orElse(Instant.ofEpochSecond(0)))</span>
+<span class="source-line-no">294</span><span id="line-294">                .thenComparing(preferRunning))</span>
+<span class="source-line-no">295</span><span id="line-295">            .findFirst();</span>
+<span class="source-line-no">296</span><span id="line-296"></span>
+<span class="source-line-no">297</span><span id="line-297">        // None found</span>
+<span class="source-line-no">298</span><span id="line-298">        if (assignedVm.isEmpty()) {</span>
+<span class="source-line-no">299</span><span id="line-299">            return;</span>
+<span class="source-line-no">300</span><span id="line-300">        }</span>
+<span class="source-line-no">301</span><span id="line-301"></span>
+<span class="source-line-no">302</span><span id="line-302">        // Assign to user</span>
+<span class="source-line-no">303</span><span id="line-303">        var vmDef = assignedVm.get().vmDefinition();</span>
+<span class="source-line-no">304</span><span id="line-304">        var vmStub = VmDefinitionStub.get(client(),</span>
+<span class="source-line-no">305</span><span id="line-305">            new GroupVersionKind(VM_OP_GROUP, "", VM_OP_KIND_VM),</span>
+<span class="source-line-no">306</span><span id="line-306">            vmDef.namespace(), vmDef.name());</span>
+<span class="source-line-no">307</span><span id="line-307">        vmStub.updateStatus(from -&gt; {</span>
+<span class="source-line-no">308</span><span id="line-308">            JsonObject status = from.status();</span>
+<span class="source-line-no">309</span><span id="line-309">            var assignment = GsonPtr.to(status).to("assignment");</span>
+<span class="source-line-no">310</span><span id="line-310">            assignment.set("pool", event.fromPool());</span>
+<span class="source-line-no">311</span><span id="line-311">            assignment.set("user", event.toUser());</span>
+<span class="source-line-no">312</span><span id="line-312">            assignment.set("lastUsed", Instant.now().toString());</span>
+<span class="source-line-no">313</span><span id="line-313">            return status;</span>
+<span class="source-line-no">314</span><span id="line-314">        });</span>
+<span class="source-line-no">315</span><span id="line-315">        event.setResult(new VmData(vmDef, assignedVm.get()));</span>
+<span class="source-line-no">316</span><span id="line-316"></span>
+<span class="source-line-no">317</span><span id="line-317">        // Make sure that a newly assigned VM is running.</span>
+<span class="source-line-no">318</span><span id="line-318">        fire(new ModifyVm(vmDef.name(), "state", "Running",</span>
+<span class="source-line-no">319</span><span id="line-319">            assignedVm.get()));</span>
+<span class="source-line-no">320</span><span id="line-320">    }</span>
+<span class="source-line-no">321</span><span id="line-321"></span>
+<span class="source-line-no">322</span><span id="line-322">    private static Comparator&lt;VmChannel&gt; preferRunning</span>
+<span class="source-line-no">323</span><span id="line-323">        = new Comparator&lt;&gt;() {</span>
+<span class="source-line-no">324</span><span id="line-324">            @Override</span>
+<span class="source-line-no">325</span><span id="line-325">            public int compare(VmChannel ch1, VmChannel ch2) {</span>
+<span class="source-line-no">326</span><span id="line-326">                if (ch1.vmDefinition().conditionStatus("Running").orElse(false)</span>
+<span class="source-line-no">327</span><span id="line-327">                    &amp;&amp; !ch2.vmDefinition().conditionStatus("Running")</span>
+<span class="source-line-no">328</span><span id="line-328">                        .orElse(false)) {</span>
+<span class="source-line-no">329</span><span id="line-329">                    return -1;</span>
+<span class="source-line-no">330</span><span id="line-330">                }</span>
+<span class="source-line-no">331</span><span id="line-331">                return 0;</span>
+<span class="source-line-no">332</span><span id="line-332">            }</span>
+<span class="source-line-no">333</span><span id="line-333">        };</span>
+<span class="source-line-no">334</span><span id="line-334"></span>
+<span class="source-line-no">335</span><span id="line-335">    @SuppressWarnings("PMD.SimplifyBooleanReturns")</span>
+<span class="source-line-no">336</span><span id="line-336">    private boolean isAssignable(VmPool pool, VmDefinition vmDef) {</span>
+<span class="source-line-no">337</span><span id="line-337">        // Check if the VM is in the pool</span>
+<span class="source-line-no">338</span><span id="line-338">        if (!vmDef.pools().contains(pool.name())) {</span>
+<span class="source-line-no">339</span><span id="line-339">            return false;</span>
+<span class="source-line-no">340</span><span id="line-340">        }</span>
+<span class="source-line-no">341</span><span id="line-341"></span>
+<span class="source-line-no">342</span><span id="line-342">        // Check if the VM is not in use</span>
+<span class="source-line-no">343</span><span id="line-343">        if (vmDef.consoleConnected()) {</span>
+<span class="source-line-no">344</span><span id="line-344">            return false;</span>
+<span class="source-line-no">345</span><span id="line-345">        }</span>
+<span class="source-line-no">346</span><span id="line-346"></span>
+<span class="source-line-no">347</span><span id="line-347">        // If not assigned, it's usable</span>
+<span class="source-line-no">348</span><span id="line-348">        if (vmDef.assignedTo().isEmpty()) {</span>
+<span class="source-line-no">349</span><span id="line-349">            return true;</span>
+<span class="source-line-no">350</span><span id="line-350">        }</span>
+<span class="source-line-no">351</span><span id="line-351"></span>
+<span class="source-line-no">352</span><span id="line-352">        // Check if it is to be retained</span>
+<span class="source-line-no">353</span><span id="line-353">        if (vmDef.assignmentLastUsed()</span>
+<span class="source-line-no">354</span><span id="line-354">            .map(lu -&gt; pool.retainUntil(lu))</span>
+<span class="source-line-no">355</span><span id="line-355">            .map(ru -&gt; Instant.now().isBefore(ru)).orElse(false)) {</span>
+<span class="source-line-no">356</span><span id="line-356">            return false;</span>
+<span class="source-line-no">357</span><span id="line-357">        }</span>
+<span class="source-line-no">358</span><span id="line-358"></span>
+<span class="source-line-no">359</span><span id="line-359">        // Additional check in case lastUsed has not been updated</span>
+<span class="source-line-no">360</span><span id="line-360">        // by PoolMonitor#onVmDefChanged() yet ("race condition")</span>
+<span class="source-line-no">361</span><span id="line-361">        if (vmDef.condition("ConsoleConnected")</span>
+<span class="source-line-no">362</span><span id="line-362">            .map(cc -&gt; cc.getLastTransitionTime().toInstant())</span>
+<span class="source-line-no">363</span><span id="line-363">            .map(t -&gt; pool.retainUntil(t))</span>
+<span class="source-line-no">364</span><span id="line-364">            .map(ru -&gt; Instant.now().isBefore(ru)).orElse(false)) {</span>
+<span class="source-line-no">365</span><span id="line-365">            return false;</span>
+<span class="source-line-no">366</span><span id="line-366">        }</span>
+<span class="source-line-no">367</span><span id="line-367">        return true;</span>
+<span class="source-line-no">368</span><span id="line-368">    }</span>
+<span class="source-line-no">369</span><span id="line-369">}</span>
 
 
 
