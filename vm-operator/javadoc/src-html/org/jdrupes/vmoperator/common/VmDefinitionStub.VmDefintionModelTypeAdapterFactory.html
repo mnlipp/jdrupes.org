@@ -47,10 +47,10 @@
 <span class="source-line-no">033</span><span id="line-33"> */</span>
 <span class="source-line-no">034</span><span id="line-34">@SuppressWarnings("PMD.DataflowAnomalyAnalysis")</span>
 <span class="source-line-no">035</span><span id="line-35">public class VmDefinitionStub</span>
-<span class="source-line-no">036</span><span id="line-36">        extends K8sDynamicStubBase&lt;VmDefinitionModel, VmDefinitionModels&gt; {</span>
+<span class="source-line-no">036</span><span id="line-36">        extends K8sDynamicStubBase&lt;VmDefinition, VmDefinitions&gt; {</span>
 <span class="source-line-no">037</span><span id="line-37"></span>
-<span class="source-line-no">038</span><span id="line-38">    private static DynamicTypeAdapterFactory&lt;VmDefinitionModel,</span>
-<span class="source-line-no">039</span><span id="line-39">            VmDefinitionModels&gt; taf = new VmDefintionModelTypeAdapterFactory();</span>
+<span class="source-line-no">038</span><span id="line-38">    private static DynamicTypeAdapterFactory&lt;VmDefinition,</span>
+<span class="source-line-no">039</span><span id="line-39">            VmDefinitions&gt; taf = new VmDefintionModelTypeAdapterFactory();</span>
 <span class="source-line-no">040</span><span id="line-40"></span>
 <span class="source-line-no">041</span><span id="line-41">    /**</span>
 <span class="source-line-no">042</span><span id="line-42">     * Instantiates a new stub for VM defintions.</span>
@@ -62,7 +62,7 @@
 <span class="source-line-no">048</span><span id="line-48">     */</span>
 <span class="source-line-no">049</span><span id="line-49">    public VmDefinitionStub(K8sClient client, APIResource context,</span>
 <span class="source-line-no">050</span><span id="line-50">            String namespace, String name) {</span>
-<span class="source-line-no">051</span><span id="line-51">        super(VmDefinitionModel.class, VmDefinitionModels.class, taf, client,</span>
+<span class="source-line-no">051</span><span id="line-51">        super(VmDefinition.class, VmDefinitions.class, taf, client,</span>
 <span class="source-line-no">052</span><span id="line-52">            context, namespace, name);</span>
 <span class="source-line-no">053</span><span id="line-53">    }</span>
 <span class="source-line-no">054</span><span id="line-54"></span>
@@ -115,10 +115,10 @@
 <span class="source-line-no">101</span><span id="line-101">     */</span>
 <span class="source-line-no">102</span><span id="line-102">    public static VmDefinitionStub createFromYaml(K8sClient client,</span>
 <span class="source-line-no">103</span><span id="line-103">            APIResource context, Reader yaml) throws ApiException {</span>
-<span class="source-line-no">104</span><span id="line-104">        var model = new VmDefinitionModel(client.getJSON().getGson(),</span>
+<span class="source-line-no">104</span><span id="line-104">        var model = new VmDefinition(client.getJSON().getGson(),</span>
 <span class="source-line-no">105</span><span id="line-105">            K8s.yamlToJson(client, yaml));</span>
-<span class="source-line-no">106</span><span id="line-106">        return K8sGenericStub.create(VmDefinitionModel.class,</span>
-<span class="source-line-no">107</span><span id="line-107">            VmDefinitionModels.class, client, context, model,</span>
+<span class="source-line-no">106</span><span id="line-106">        return K8sGenericStub.create(VmDefinition.class,</span>
+<span class="source-line-no">107</span><span id="line-107">            VmDefinitions.class, client, context, model,</span>
 <span class="source-line-no">108</span><span id="line-108">            (c, ns, n) -&gt; new VmDefinitionStub(c, context, ns, n));</span>
 <span class="source-line-no">109</span><span id="line-109">    }</span>
 <span class="source-line-no">110</span><span id="line-110"></span>
@@ -135,8 +135,8 @@
 <span class="source-line-no">121</span><span id="line-121">    public static Collection&lt;VmDefinitionStub&gt; list(K8sClient client,</span>
 <span class="source-line-no">122</span><span id="line-122">            APIResource context, String namespace, ListOptions options)</span>
 <span class="source-line-no">123</span><span id="line-123">            throws ApiException {</span>
-<span class="source-line-no">124</span><span id="line-124">        return K8sGenericStub.list(VmDefinitionModel.class,</span>
-<span class="source-line-no">125</span><span id="line-125">            VmDefinitionModels.class, client, context, namespace, options,</span>
+<span class="source-line-no">124</span><span id="line-124">        return K8sGenericStub.list(VmDefinition.class,</span>
+<span class="source-line-no">125</span><span id="line-125">            VmDefinitions.class, client, context, namespace, options,</span>
 <span class="source-line-no">126</span><span id="line-126">            (c, ns, n) -&gt; new VmDefinitionStub(c, context, ns, n));</span>
 <span class="source-line-no">127</span><span id="line-127">    }</span>
 <span class="source-line-no">128</span><span id="line-128"></span>
@@ -158,13 +158,13 @@
 <span class="source-line-no">144</span><span id="line-144">     * A factory for creating VmDefinitionModel(s) objects.</span>
 <span class="source-line-no">145</span><span id="line-145">     */</span>
 <span class="source-line-no">146</span><span id="line-146">    public static class VmDefintionModelTypeAdapterFactory extends</span>
-<span class="source-line-no">147</span><span id="line-147">            DynamicTypeAdapterFactory&lt;VmDefinitionModel, VmDefinitionModels&gt; {</span>
+<span class="source-line-no">147</span><span id="line-147">            DynamicTypeAdapterFactory&lt;VmDefinition, VmDefinitions&gt; {</span>
 <span class="source-line-no">148</span><span id="line-148"></span>
 <span class="source-line-no">149</span><span id="line-149">        /**</span>
 <span class="source-line-no">150</span><span id="line-150">         * Instantiates a new dynamic model type adapter factory.</span>
 <span class="source-line-no">151</span><span id="line-151">         */</span>
 <span class="source-line-no">152</span><span id="line-152">        public VmDefintionModelTypeAdapterFactory() {</span>
-<span class="source-line-no">153</span><span id="line-153">            super(VmDefinitionModel.class, VmDefinitionModels.class);</span>
+<span class="source-line-no">153</span><span id="line-153">            super(VmDefinition.class, VmDefinitions.class);</span>
 <span class="source-line-no">154</span><span id="line-154">        }</span>
 <span class="source-line-no">155</span><span id="line-155">    }</span>
 <span class="source-line-no">156</span><span id="line-156"></span>

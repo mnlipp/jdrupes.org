@@ -239,7 +239,7 @@
 <span class="source-line-no">225</span><span id="line-225">            new GroupVersionKind(VM_OP_GROUP, "", VM_OP_KIND_VM),</span>
 <span class="source-line-no">226</span><span id="line-226">            vmDef.namespace(), vmDef.name());</span>
 <span class="source-line-no">227</span><span id="line-227">        vmStub.updateStatus(from -&gt; {</span>
-<span class="source-line-no">228</span><span id="line-228">            JsonObject status = from.status();</span>
+<span class="source-line-no">228</span><span id="line-228">            JsonObject status = from.statusJson();</span>
 <span class="source-line-no">229</span><span id="line-229">            var assignment = GsonPtr.to(status).to("assignment");</span>
 <span class="source-line-no">230</span><span id="line-230">            assignment.set("pool", event.usedPool());</span>
 <span class="source-line-no">231</span><span id="line-231">            assignment.set("user", event.toUser());</span>
