@@ -149,61 +149,102 @@
 <span class="source-line-no">135</span><span id="line-135">    }</span>
 <span class="source-line-no">136</span><span id="line-136"></span>
 <span class="source-line-no">137</span><span id="line-137">    /**</span>
-<span class="source-line-no">138</span><span id="line-138">     * To string.</span>
+<span class="source-line-no">138</span><span id="line-138">     * Collect all permissions for the given user with the given roles.</span>
 <span class="source-line-no">139</span><span id="line-139">     *</span>
-<span class="source-line-no">140</span><span id="line-140">     * @return the string</span>
-<span class="source-line-no">141</span><span id="line-141">     */</span>
-<span class="source-line-no">142</span><span id="line-142">    @Override</span>
-<span class="source-line-no">143</span><span id="line-143">    @SuppressWarnings({ "PMD.AvoidLiteralsInIfCondition",</span>
-<span class="source-line-no">144</span><span id="line-144">        "PMD.AvoidSynchronizedStatement" })</span>
-<span class="source-line-no">145</span><span id="line-145">    public String toString() {</span>
-<span class="source-line-no">146</span><span id="line-146">        StringBuilder builder = new StringBuilder(50);</span>
-<span class="source-line-no">147</span><span id="line-147">        builder.append("VmPool [name=").append(name).append(", permissions=")</span>
-<span class="source-line-no">148</span><span id="line-148">            .append(permissions).append(", vms=");</span>
-<span class="source-line-no">149</span><span id="line-149">        if (vms.size() &lt;= 3) {</span>
-<span class="source-line-no">150</span><span id="line-150">            builder.append(vms);</span>
-<span class="source-line-no">151</span><span id="line-151">        } else {</span>
-<span class="source-line-no">152</span><span id="line-152">            synchronized (vms) {</span>
-<span class="source-line-no">153</span><span id="line-153">                builder.append('[').append(vms.stream().limit(3)</span>
-<span class="source-line-no">154</span><span id="line-154">                    .map(s -&gt; s + ",").collect(Collectors.joining()))</span>
-<span class="source-line-no">155</span><span id="line-155">                    .append("...]");</span>
-<span class="source-line-no">156</span><span id="line-156">            }</span>
-<span class="source-line-no">157</span><span id="line-157">        }</span>
-<span class="source-line-no">158</span><span id="line-158">        builder.append(']');</span>
-<span class="source-line-no">159</span><span id="line-159">        return builder.toString();</span>
-<span class="source-line-no">160</span><span id="line-160">    }</span>
-<span class="source-line-no">161</span><span id="line-161"></span>
-<span class="source-line-no">162</span><span id="line-162">    /**</span>
-<span class="source-line-no">163</span><span id="line-163">     * Collect all permissions for the given user with the given roles.</span>
-<span class="source-line-no">164</span><span id="line-164">     *</span>
-<span class="source-line-no">165</span><span id="line-165">     * @param user the user</span>
-<span class="source-line-no">166</span><span id="line-166">     * @param roles the roles</span>
-<span class="source-line-no">167</span><span id="line-167">     * @return the sets the</span>
-<span class="source-line-no">168</span><span id="line-168">     */</span>
-<span class="source-line-no">169</span><span id="line-169">    public Set&lt;Permission&gt; permissionsFor(String user,</span>
-<span class="source-line-no">170</span><span id="line-170">            Collection&lt;String&gt; roles) {</span>
-<span class="source-line-no">171</span><span id="line-171">        return permissions.stream()</span>
-<span class="source-line-no">172</span><span id="line-172">            .filter(g -&gt; DataPath.get(g, "user").map(u -&gt; u.equals(user))</span>
-<span class="source-line-no">173</span><span id="line-173">                .orElse(false)</span>
-<span class="source-line-no">174</span><span id="line-174">                || DataPath.get(g, "role").map(roles::contains).orElse(false))</span>
-<span class="source-line-no">175</span><span id="line-175">            .map(g -&gt; DataPath.&lt;Set&lt;Permission&gt;&gt; get(g, "may")</span>
-<span class="source-line-no">176</span><span id="line-176">                .orElse(Collections.emptySet()).stream())</span>
-<span class="source-line-no">177</span><span id="line-177">            .flatMap(Function.identity()).collect(Collectors.toSet());</span>
-<span class="source-line-no">178</span><span id="line-178">    }</span>
-<span class="source-line-no">179</span><span id="line-179"></span>
-<span class="source-line-no">180</span><span id="line-180">    /**</span>
-<span class="source-line-no">181</span><span id="line-181">     * Return the instant until which an assignment should be retained.</span>
-<span class="source-line-no">182</span><span id="line-182">     *</span>
-<span class="source-line-no">183</span><span id="line-183">     * @param lastUsed the last used</span>
-<span class="source-line-no">184</span><span id="line-184">     * @return the instant</span>
-<span class="source-line-no">185</span><span id="line-185">     */</span>
-<span class="source-line-no">186</span><span id="line-186">    public Instant retainUntil(Instant lastUsed) {</span>
-<span class="source-line-no">187</span><span id="line-187">        if (retention.startsWith("P")) {</span>
-<span class="source-line-no">188</span><span id="line-188">            return lastUsed.plus(Duration.parse(retention));</span>
-<span class="source-line-no">189</span><span id="line-189">        }</span>
-<span class="source-line-no">190</span><span id="line-190">        return Instant.parse(retention);</span>
-<span class="source-line-no">191</span><span id="line-191">    }</span>
-<span class="source-line-no">192</span><span id="line-192">}</span>
+<span class="source-line-no">140</span><span id="line-140">     * @param user the user</span>
+<span class="source-line-no">141</span><span id="line-141">     * @param roles the roles</span>
+<span class="source-line-no">142</span><span id="line-142">     * @return the sets the</span>
+<span class="source-line-no">143</span><span id="line-143">     */</span>
+<span class="source-line-no">144</span><span id="line-144">    public Set&lt;Permission&gt; permissionsFor(String user,</span>
+<span class="source-line-no">145</span><span id="line-145">            Collection&lt;String&gt; roles) {</span>
+<span class="source-line-no">146</span><span id="line-146">        return permissions.stream()</span>
+<span class="source-line-no">147</span><span id="line-147">            .filter(g -&gt; DataPath.get(g, "user").map(u -&gt; u.equals(user))</span>
+<span class="source-line-no">148</span><span id="line-148">                .orElse(false)</span>
+<span class="source-line-no">149</span><span id="line-149">                || DataPath.get(g, "role").map(roles::contains).orElse(false))</span>
+<span class="source-line-no">150</span><span id="line-150">            .map(g -&gt; DataPath.&lt;Set&lt;Permission&gt;&gt; get(g, "may")</span>
+<span class="source-line-no">151</span><span id="line-151">                .orElse(Collections.emptySet()).stream())</span>
+<span class="source-line-no">152</span><span id="line-152">            .flatMap(Function.identity()).collect(Collectors.toSet());</span>
+<span class="source-line-no">153</span><span id="line-153">    }</span>
+<span class="source-line-no">154</span><span id="line-154"></span>
+<span class="source-line-no">155</span><span id="line-155">    /**</span>
+<span class="source-line-no">156</span><span id="line-156">     * Checks if the given VM belongs to the pool and is not in use.</span>
+<span class="source-line-no">157</span><span id="line-157">     *</span>
+<span class="source-line-no">158</span><span id="line-158">     * @param vmDef the vm def</span>
+<span class="source-line-no">159</span><span id="line-159">     * @return true, if is assignable</span>
+<span class="source-line-no">160</span><span id="line-160">     */</span>
+<span class="source-line-no">161</span><span id="line-161">    @SuppressWarnings("PMD.SimplifyBooleanReturns")</span>
+<span class="source-line-no">162</span><span id="line-162">    public boolean isAssignable(VmDefinition vmDef) {</span>
+<span class="source-line-no">163</span><span id="line-163">        // Check if the VM is in the pool</span>
+<span class="source-line-no">164</span><span id="line-164">        if (!vmDef.pools().contains(name)) {</span>
+<span class="source-line-no">165</span><span id="line-165">            return false;</span>
+<span class="source-line-no">166</span><span id="line-166">        }</span>
+<span class="source-line-no">167</span><span id="line-167"></span>
+<span class="source-line-no">168</span><span id="line-168">        // Check if the VM is not in use</span>
+<span class="source-line-no">169</span><span id="line-169">        if (vmDef.consoleConnected()) {</span>
+<span class="source-line-no">170</span><span id="line-170">            return false;</span>
+<span class="source-line-no">171</span><span id="line-171">        }</span>
+<span class="source-line-no">172</span><span id="line-172"></span>
+<span class="source-line-no">173</span><span id="line-173">        // If not assigned, it's usable</span>
+<span class="source-line-no">174</span><span id="line-174">        if (vmDef.assignedTo().isEmpty()) {</span>
+<span class="source-line-no">175</span><span id="line-175">            return true;</span>
+<span class="source-line-no">176</span><span id="line-176">        }</span>
+<span class="source-line-no">177</span><span id="line-177"></span>
+<span class="source-line-no">178</span><span id="line-178">        // Check if it is to be retained</span>
+<span class="source-line-no">179</span><span id="line-179">        if (vmDef.assignmentLastUsed()</span>
+<span class="source-line-no">180</span><span id="line-180">            .map(this::retainUntil)</span>
+<span class="source-line-no">181</span><span id="line-181">            .map(ru -&gt; Instant.now().isBefore(ru)).orElse(false)) {</span>
+<span class="source-line-no">182</span><span id="line-182">            return false;</span>
+<span class="source-line-no">183</span><span id="line-183">        }</span>
+<span class="source-line-no">184</span><span id="line-184"></span>
+<span class="source-line-no">185</span><span id="line-185">        // Additional check in case lastUsed has not been updated</span>
+<span class="source-line-no">186</span><span id="line-186">        // by PoolMonitor#onVmDefChanged() yet ("race condition")</span>
+<span class="source-line-no">187</span><span id="line-187">        if (vmDef.condition("ConsoleConnected")</span>
+<span class="source-line-no">188</span><span id="line-188">            .map(cc -&gt; cc.getLastTransitionTime().toInstant())</span>
+<span class="source-line-no">189</span><span id="line-189">            .map(this::retainUntil)</span>
+<span class="source-line-no">190</span><span id="line-190">            .map(ru -&gt; Instant.now().isBefore(ru)).orElse(false)) {</span>
+<span class="source-line-no">191</span><span id="line-191">            return false;</span>
+<span class="source-line-no">192</span><span id="line-192">        }</span>
+<span class="source-line-no">193</span><span id="line-193">        return true;</span>
+<span class="source-line-no">194</span><span id="line-194">    }</span>
+<span class="source-line-no">195</span><span id="line-195"></span>
+<span class="source-line-no">196</span><span id="line-196">    /**</span>
+<span class="source-line-no">197</span><span id="line-197">     * Return the instant until which an assignment should be retained.</span>
+<span class="source-line-no">198</span><span id="line-198">     *</span>
+<span class="source-line-no">199</span><span id="line-199">     * @param lastUsed the last used</span>
+<span class="source-line-no">200</span><span id="line-200">     * @return the instant</span>
+<span class="source-line-no">201</span><span id="line-201">     */</span>
+<span class="source-line-no">202</span><span id="line-202">    public Instant retainUntil(Instant lastUsed) {</span>
+<span class="source-line-no">203</span><span id="line-203">        if (retention.startsWith("P")) {</span>
+<span class="source-line-no">204</span><span id="line-204">            return lastUsed.plus(Duration.parse(retention));</span>
+<span class="source-line-no">205</span><span id="line-205">        }</span>
+<span class="source-line-no">206</span><span id="line-206">        return Instant.parse(retention);</span>
+<span class="source-line-no">207</span><span id="line-207">    }</span>
+<span class="source-line-no">208</span><span id="line-208"></span>
+<span class="source-line-no">209</span><span id="line-209">    /**</span>
+<span class="source-line-no">210</span><span id="line-210">     * To string.</span>
+<span class="source-line-no">211</span><span id="line-211">     *</span>
+<span class="source-line-no">212</span><span id="line-212">     * @return the string</span>
+<span class="source-line-no">213</span><span id="line-213">     */</span>
+<span class="source-line-no">214</span><span id="line-214">    @Override</span>
+<span class="source-line-no">215</span><span id="line-215">    @SuppressWarnings({ "PMD.AvoidLiteralsInIfCondition",</span>
+<span class="source-line-no">216</span><span id="line-216">        "PMD.AvoidSynchronizedStatement" })</span>
+<span class="source-line-no">217</span><span id="line-217">    public String toString() {</span>
+<span class="source-line-no">218</span><span id="line-218">        StringBuilder builder = new StringBuilder(50);</span>
+<span class="source-line-no">219</span><span id="line-219">        builder.append("VmPool [name=").append(name).append(", permissions=")</span>
+<span class="source-line-no">220</span><span id="line-220">            .append(permissions).append(", vms=");</span>
+<span class="source-line-no">221</span><span id="line-221">        if (vms.size() &lt;= 3) {</span>
+<span class="source-line-no">222</span><span id="line-222">            builder.append(vms);</span>
+<span class="source-line-no">223</span><span id="line-223">        } else {</span>
+<span class="source-line-no">224</span><span id="line-224">            synchronized (vms) {</span>
+<span class="source-line-no">225</span><span id="line-225">                builder.append('[').append(vms.stream().limit(3)</span>
+<span class="source-line-no">226</span><span id="line-226">                    .map(s -&gt; s + ",").collect(Collectors.joining()))</span>
+<span class="source-line-no">227</span><span id="line-227">                    .append("...]");</span>
+<span class="source-line-no">228</span><span id="line-228">            }</span>
+<span class="source-line-no">229</span><span id="line-229">        }</span>
+<span class="source-line-no">230</span><span id="line-230">        builder.append(']');</span>
+<span class="source-line-no">231</span><span id="line-231">        return builder.toString();</span>
+<span class="source-line-no">232</span><span id="line-232">    }</span>
+<span class="source-line-no">233</span><span id="line-233">}</span>
 
 
 
