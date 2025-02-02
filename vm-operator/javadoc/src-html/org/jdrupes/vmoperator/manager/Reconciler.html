@@ -262,7 +262,7 @@
 <span class="source-line-no">248</span><span id="line-248">    public void onResetVm(ResetVm event, VmChannel channel)</span>
 <span class="source-line-no">249</span><span id="line-249">            throws ApiException, IOException, TemplateException {</span>
 <span class="source-line-no">250</span><span id="line-250">        var vmDef = channel.vmDefinition();</span>
-<span class="source-line-no">251</span><span id="line-251">        vmDef.extra("resetCount", vmDef.&lt;Long&gt; extra("resetCount") + 1);</span>
+<span class="source-line-no">251</span><span id="line-251">        vmDef.extra().ifPresent(e -&gt; e.resetCount(e.resetCount() + 1));</span>
 <span class="source-line-no">252</span><span id="line-252">        Map&lt;String, Object&gt; model</span>
 <span class="source-line-no">253</span><span id="line-253">            = prepareModel(channel.client(), channel.vmDefinition());</span>
 <span class="source-line-no">254</span><span id="line-254">        cmReconciler.reconcile(model, channel);</span>
