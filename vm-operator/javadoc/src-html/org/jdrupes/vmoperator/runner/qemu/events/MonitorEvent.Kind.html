@@ -49,7 +49,7 @@
 <span class="source-line-no">035</span><span id="line-35">     */</span>
 <span class="source-line-no">036</span><span id="line-36">    public enum Kind {</span>
 <span class="source-line-no">037</span><span id="line-37">        READY, POWERDOWN, DEVICE_TRAY_MOVED, BALLOON_CHANGE, SHUTDOWN,</span>
-<span class="source-line-no">038</span><span id="line-38">        SPICE_CONNECTED, SPICE_INITIALIZED, SPICE_DISCONNECTED</span>
+<span class="source-line-no">038</span><span id="line-38">        SPICE_CONNECTED, SPICE_INITIALIZED, SPICE_DISCONNECTED, VSERPORT_CHANGE</span>
 <span class="source-line-no">039</span><span id="line-39">    }</span>
 <span class="source-line-no">040</span><span id="line-40"></span>
 <span class="source-line-no">041</span><span id="line-41">    private final Kind kind;</span>
@@ -86,44 +86,47 @@
 <span class="source-line-no">072</span><span id="line-72">            case SPICE_DISCONNECTED:</span>
 <span class="source-line-no">073</span><span id="line-73">                return Optional.of(new SpiceDisconnectedEvent(kind,</span>
 <span class="source-line-no">074</span><span id="line-74">                    response.get(EVENT_DATA)));</span>
-<span class="source-line-no">075</span><span id="line-75">            default:</span>
-<span class="source-line-no">076</span><span id="line-76">                return Optional</span>
-<span class="source-line-no">077</span><span id="line-77">                    .of(new MonitorEvent(kind, response.get(EVENT_DATA)));</span>
-<span class="source-line-no">078</span><span id="line-78">            }</span>
-<span class="source-line-no">079</span><span id="line-79">        } catch (IllegalArgumentException e) {</span>
-<span class="source-line-no">080</span><span id="line-80">            return Optional.empty();</span>
-<span class="source-line-no">081</span><span id="line-81">        }</span>
-<span class="source-line-no">082</span><span id="line-82">    }</span>
-<span class="source-line-no">083</span><span id="line-83"></span>
-<span class="source-line-no">084</span><span id="line-84">    /**</span>
-<span class="source-line-no">085</span><span id="line-85">     * Instantiates a new monitor event.</span>
-<span class="source-line-no">086</span><span id="line-86">     *</span>
-<span class="source-line-no">087</span><span id="line-87">     * @param kind the kind</span>
-<span class="source-line-no">088</span><span id="line-88">     * @param data the data</span>
-<span class="source-line-no">089</span><span id="line-89">     */</span>
-<span class="source-line-no">090</span><span id="line-90">    protected MonitorEvent(Kind kind, JsonNode data) {</span>
-<span class="source-line-no">091</span><span id="line-91">        this.kind = kind;</span>
-<span class="source-line-no">092</span><span id="line-92">        this.data = data;</span>
-<span class="source-line-no">093</span><span id="line-93">    }</span>
-<span class="source-line-no">094</span><span id="line-94"></span>
-<span class="source-line-no">095</span><span id="line-95">    /**</span>
-<span class="source-line-no">096</span><span id="line-96">     * Returns the kind of event.</span>
-<span class="source-line-no">097</span><span id="line-97">     *</span>
-<span class="source-line-no">098</span><span id="line-98">     * @return the kind</span>
-<span class="source-line-no">099</span><span id="line-99">     */</span>
-<span class="source-line-no">100</span><span id="line-100">    public Kind kind() {</span>
-<span class="source-line-no">101</span><span id="line-101">        return kind;</span>
-<span class="source-line-no">102</span><span id="line-102">    }</span>
-<span class="source-line-no">103</span><span id="line-103"></span>
-<span class="source-line-no">104</span><span id="line-104">    /**</span>
-<span class="source-line-no">105</span><span id="line-105">     * Returns the data associated with the event.</span>
-<span class="source-line-no">106</span><span id="line-106">     *</span>
-<span class="source-line-no">107</span><span id="line-107">     * @return the object[]</span>
-<span class="source-line-no">108</span><span id="line-108">     */</span>
-<span class="source-line-no">109</span><span id="line-109">    public JsonNode data() {</span>
-<span class="source-line-no">110</span><span id="line-110">        return data;</span>
-<span class="source-line-no">111</span><span id="line-111">    }</span>
-<span class="source-line-no">112</span><span id="line-112">}</span>
+<span class="source-line-no">075</span><span id="line-75">            case VSERPORT_CHANGE:</span>
+<span class="source-line-no">076</span><span id="line-76">                return Optional.of(new VserportChangeEvent(kind,</span>
+<span class="source-line-no">077</span><span id="line-77">                    response.get(EVENT_DATA)));</span>
+<span class="source-line-no">078</span><span id="line-78">            default:</span>
+<span class="source-line-no">079</span><span id="line-79">                return Optional</span>
+<span class="source-line-no">080</span><span id="line-80">                    .of(new MonitorEvent(kind, response.get(EVENT_DATA)));</span>
+<span class="source-line-no">081</span><span id="line-81">            }</span>
+<span class="source-line-no">082</span><span id="line-82">        } catch (IllegalArgumentException e) {</span>
+<span class="source-line-no">083</span><span id="line-83">            return Optional.empty();</span>
+<span class="source-line-no">084</span><span id="line-84">        }</span>
+<span class="source-line-no">085</span><span id="line-85">    }</span>
+<span class="source-line-no">086</span><span id="line-86"></span>
+<span class="source-line-no">087</span><span id="line-87">    /**</span>
+<span class="source-line-no">088</span><span id="line-88">     * Instantiates a new monitor event.</span>
+<span class="source-line-no">089</span><span id="line-89">     *</span>
+<span class="source-line-no">090</span><span id="line-90">     * @param kind the kind</span>
+<span class="source-line-no">091</span><span id="line-91">     * @param data the data</span>
+<span class="source-line-no">092</span><span id="line-92">     */</span>
+<span class="source-line-no">093</span><span id="line-93">    protected MonitorEvent(Kind kind, JsonNode data) {</span>
+<span class="source-line-no">094</span><span id="line-94">        this.kind = kind;</span>
+<span class="source-line-no">095</span><span id="line-95">        this.data = data;</span>
+<span class="source-line-no">096</span><span id="line-96">    }</span>
+<span class="source-line-no">097</span><span id="line-97"></span>
+<span class="source-line-no">098</span><span id="line-98">    /**</span>
+<span class="source-line-no">099</span><span id="line-99">     * Returns the kind of event.</span>
+<span class="source-line-no">100</span><span id="line-100">     *</span>
+<span class="source-line-no">101</span><span id="line-101">     * @return the kind</span>
+<span class="source-line-no">102</span><span id="line-102">     */</span>
+<span class="source-line-no">103</span><span id="line-103">    public Kind kind() {</span>
+<span class="source-line-no">104</span><span id="line-104">        return kind;</span>
+<span class="source-line-no">105</span><span id="line-105">    }</span>
+<span class="source-line-no">106</span><span id="line-106"></span>
+<span class="source-line-no">107</span><span id="line-107">    /**</span>
+<span class="source-line-no">108</span><span id="line-108">     * Returns the data associated with the event.</span>
+<span class="source-line-no">109</span><span id="line-109">     *</span>
+<span class="source-line-no">110</span><span id="line-110">     * @return the object[]</span>
+<span class="source-line-no">111</span><span id="line-111">     */</span>
+<span class="source-line-no">112</span><span id="line-112">    public JsonNode data() {</span>
+<span class="source-line-no">113</span><span id="line-113">        return data;</span>
+<span class="source-line-no">114</span><span id="line-114">    }</span>
+<span class="source-line-no">115</span><span id="line-115">}</span>
 
 
 
