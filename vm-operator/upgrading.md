@@ -1,5 +1,7 @@
 ---
 title: "VM-Operator: Upgrading — Issues to watch out for"
+description: >-
+  Information about issues to watch out for when upgrading the VM-Operator.
 layout: vm-operator
 ---
 
@@ -7,24 +9,16 @@ layout: vm-operator
 
 ## To version 4.0.0
 
- * The VmViewer conlet has been renamed to VmAccess. This affects the
-   [configuration](https://jdrupes.org/vm-operator/user-gui.html). Configuration
-   information using the old path
-   `/Manager/GuiHttpServer/ConsoleWeblet/WebConsole/ComponentCollector/VmViewer`
-   is still accepted for backward compatibility until the next major version,
-   but should be updated.
+The VmViewer conlet has been renamed to VmAccess. This affects the
+[configuration](https://jdrupes.org/vm-operator/user-gui.html). Configuration information using the old path
+"/Manager/GuiHttpServer/ConsoleWeblet/WebConsole/ComponentCollector/VmViewer"
+is still accepted for backward compatibility, but should be updated.
 
-   The change of name also causes conlets added to the overview page by
-   users to "disappear" from the GUI. They have to be re-added.
+The change of name also causes conlets added to the overview page by
+users to "disappear" from the GUI. They have to be re-added.
 
-   The latter behavior also applies to the VmConlet conlet which has been
-   renamed to VmMgmt.
-   
- * The configuration property `passwordValidity` has been moved from component
-   `/Manager/Controller/DisplaySecretMonitor` to
-   `/Manager/Controller/Reconciler/DisplaySecretReconciler`. The old path is 
-   still accepted for backward compatibility until the next major version,
-   but should be updated.
+The latter behavior also applies to the VmConlet conlet which has been
+renamed to VmMgmt.
 
 ## To version 3.4.0
 
