@@ -57,8 +57,8 @@
 <span class="source-line-no">043</span><span id="line-43">import org.jdrupes.vmoperator.common.VmDefinition.Permission;</span>
 <span class="source-line-no">044</span><span id="line-44">import org.jdrupes.vmoperator.common.VmExtraData;</span>
 <span class="source-line-no">045</span><span id="line-45">import org.jdrupes.vmoperator.manager.events.ChannelTracker;</span>
-<span class="source-line-no">046</span><span id="line-46">import org.jdrupes.vmoperator.manager.events.ModifyVm;</span>
-<span class="source-line-no">047</span><span id="line-47">import org.jdrupes.vmoperator.manager.events.PrepareConsole;</span>
+<span class="source-line-no">046</span><span id="line-46">import org.jdrupes.vmoperator.manager.events.GetDisplayPassword;</span>
+<span class="source-line-no">047</span><span id="line-47">import org.jdrupes.vmoperator.manager.events.ModifyVm;</span>
 <span class="source-line-no">048</span><span id="line-48">import org.jdrupes.vmoperator.manager.events.ResetVm;</span>
 <span class="source-line-no">049</span><span id="line-49">import org.jdrupes.vmoperator.manager.events.VmChannel;</span>
 <span class="source-line-no">050</span><span id="line-50">import org.jdrupes.vmoperator.manager.events.VmDefChanged;</span>
@@ -497,44 +497,39 @@
 <span class="source-line-no">483</span><span id="line-483">                Map.of("autoClose", 5_000, "type", "Warning")));</span>
 <span class="source-line-no">484</span><span id="line-484">            return;</span>
 <span class="source-line-no">485</span><span id="line-485">        }</span>
-<span class="source-line-no">486</span><span id="line-486">        var pwQuery = Event.onCompletion(new PrepareConsole(vmDef, user),</span>
-<span class="source-line-no">487</span><span id="line-487">            e -&gt; gotPassword(channel, model, vmDef, e));</span>
-<span class="source-line-no">488</span><span id="line-488">        fire(pwQuery, vmChannel);</span>
-<span class="source-line-no">489</span><span id="line-489">    }</span>
-<span class="source-line-no">490</span><span id="line-490"></span>
-<span class="source-line-no">491</span><span id="line-491">    private void gotPassword(ConsoleConnection channel, VmsModel model,</span>
-<span class="source-line-no">492</span><span id="line-492">            VmDefinition vmDef, PrepareConsole event) {</span>
-<span class="source-line-no">493</span><span id="line-493">        if (!event.passwordAvailable()) {</span>
-<span class="source-line-no">494</span><span id="line-494">            return;</span>
-<span class="source-line-no">495</span><span id="line-495">        }</span>
-<span class="source-line-no">496</span><span id="line-496">        vmDef.extra().map(xtra -&gt; xtra.connectionFile(event.password(),</span>
-<span class="source-line-no">497</span><span id="line-497">            preferredIpVersion, deleteConnectionFile)).ifPresent(</span>
-<span class="source-line-no">498</span><span id="line-498">                cf -&gt; channel.respond(new NotifyConletView(type(),</span>
-<span class="source-line-no">499</span><span id="line-499">                    model.getConletId(), "openConsole", cf)));</span>
-<span class="source-line-no">500</span><span id="line-500">    }</span>
-<span class="source-line-no">501</span><span id="line-501"></span>
-<span class="source-line-no">502</span><span id="line-502">    @Override</span>
-<span class="source-line-no">503</span><span id="line-503">    protected boolean doSetLocale(SetLocale event, ConsoleConnection channel,</span>
-<span class="source-line-no">504</span><span id="line-504">            String conletId) throws Exception {</span>
-<span class="source-line-no">505</span><span id="line-505">        return true;</span>
-<span class="source-line-no">506</span><span id="line-506">    }</span>
+<span class="source-line-no">486</span><span id="line-486">        var pwQuery = Event.onCompletion(new GetDisplayPassword(vmDef, user),</span>
+<span class="source-line-no">487</span><span id="line-487">            e -&gt; {</span>
+<span class="source-line-no">488</span><span id="line-488">                vmDef.extra().map(xtra -&gt; xtra.connectionFile(</span>
+<span class="source-line-no">489</span><span id="line-489">                    e.password().orElse(null), preferredIpVersion,</span>
+<span class="source-line-no">490</span><span id="line-490">                    deleteConnectionFile)).ifPresent(</span>
+<span class="source-line-no">491</span><span id="line-491">                        cf -&gt; channel.respond(new NotifyConletView(type(),</span>
+<span class="source-line-no">492</span><span id="line-492">                            model.getConletId(), "openConsole", cf)));</span>
+<span class="source-line-no">493</span><span id="line-493">            });</span>
+<span class="source-line-no">494</span><span id="line-494">        fire(pwQuery, vmChannel);</span>
+<span class="source-line-no">495</span><span id="line-495">    }</span>
+<span class="source-line-no">496</span><span id="line-496"></span>
+<span class="source-line-no">497</span><span id="line-497">    @Override</span>
+<span class="source-line-no">498</span><span id="line-498">    protected boolean doSetLocale(SetLocale event, ConsoleConnection channel,</span>
+<span class="source-line-no">499</span><span id="line-499">            String conletId) throws Exception {</span>
+<span class="source-line-no">500</span><span id="line-500">        return true;</span>
+<span class="source-line-no">501</span><span id="line-501">    }</span>
+<span class="source-line-no">502</span><span id="line-502"></span>
+<span class="source-line-no">503</span><span id="line-503">    /**</span>
+<span class="source-line-no">504</span><span id="line-504">     * The Class VmsModel.</span>
+<span class="source-line-no">505</span><span id="line-505">     */</span>
+<span class="source-line-no">506</span><span id="line-506">    public class VmsModel extends ConletBaseModel {</span>
 <span class="source-line-no">507</span><span id="line-507"></span>
-<span class="source-line-no">508</span><span id="line-508">    /**</span>
-<span class="source-line-no">509</span><span id="line-509">     * The Class VmsModel.</span>
-<span class="source-line-no">510</span><span id="line-510">     */</span>
-<span class="source-line-no">511</span><span id="line-511">    public class VmsModel extends ConletBaseModel {</span>
-<span class="source-line-no">512</span><span id="line-512"></span>
-<span class="source-line-no">513</span><span id="line-513">        /**</span>
-<span class="source-line-no">514</span><span id="line-514">         * Instantiates a new vms model.</span>
-<span class="source-line-no">515</span><span id="line-515">         *</span>
-<span class="source-line-no">516</span><span id="line-516">         * @param conletId the conlet id</span>
-<span class="source-line-no">517</span><span id="line-517">         */</span>
-<span class="source-line-no">518</span><span id="line-518">        public VmsModel(String conletId) {</span>
-<span class="source-line-no">519</span><span id="line-519">            super(conletId);</span>
-<span class="source-line-no">520</span><span id="line-520">        }</span>
-<span class="source-line-no">521</span><span id="line-521"></span>
-<span class="source-line-no">522</span><span id="line-522">    }</span>
-<span class="source-line-no">523</span><span id="line-523">}</span>
+<span class="source-line-no">508</span><span id="line-508">        /**</span>
+<span class="source-line-no">509</span><span id="line-509">         * Instantiates a new vms model.</span>
+<span class="source-line-no">510</span><span id="line-510">         *</span>
+<span class="source-line-no">511</span><span id="line-511">         * @param conletId the conlet id</span>
+<span class="source-line-no">512</span><span id="line-512">         */</span>
+<span class="source-line-no">513</span><span id="line-513">        public VmsModel(String conletId) {</span>
+<span class="source-line-no">514</span><span id="line-514">            super(conletId);</span>
+<span class="source-line-no">515</span><span id="line-515">        }</span>
+<span class="source-line-no">516</span><span id="line-516"></span>
+<span class="source-line-no">517</span><span id="line-517">    }</span>
+<span class="source-line-no">518</span><span id="line-518">}</span>
 
 
 
