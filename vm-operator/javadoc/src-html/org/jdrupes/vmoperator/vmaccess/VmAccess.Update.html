@@ -63,11 +63,11 @@
 <span class="source-line-no">049</span><span id="line-49">import org.jdrupes.vmoperator.common.VmDefinition.Permission;</span>
 <span class="source-line-no">050</span><span id="line-50">import org.jdrupes.vmoperator.common.VmPool;</span>
 <span class="source-line-no">051</span><span id="line-51">import org.jdrupes.vmoperator.manager.events.AssignVm;</span>
-<span class="source-line-no">052</span><span id="line-52">import org.jdrupes.vmoperator.manager.events.GetPools;</span>
-<span class="source-line-no">053</span><span id="line-53">import org.jdrupes.vmoperator.manager.events.GetVms;</span>
-<span class="source-line-no">054</span><span id="line-54">import org.jdrupes.vmoperator.manager.events.GetVms.VmData;</span>
-<span class="source-line-no">055</span><span id="line-55">import org.jdrupes.vmoperator.manager.events.ModifyVm;</span>
-<span class="source-line-no">056</span><span id="line-56">import org.jdrupes.vmoperator.manager.events.PrepareConsole;</span>
+<span class="source-line-no">052</span><span id="line-52">import org.jdrupes.vmoperator.manager.events.GetDisplayPassword;</span>
+<span class="source-line-no">053</span><span id="line-53">import org.jdrupes.vmoperator.manager.events.GetPools;</span>
+<span class="source-line-no">054</span><span id="line-54">import org.jdrupes.vmoperator.manager.events.GetVms;</span>
+<span class="source-line-no">055</span><span id="line-55">import org.jdrupes.vmoperator.manager.events.GetVms.VmData;</span>
+<span class="source-line-no">056</span><span id="line-56">import org.jdrupes.vmoperator.manager.events.ModifyVm;</span>
 <span class="source-line-no">057</span><span id="line-57">import org.jdrupes.vmoperator.manager.events.ResetVm;</span>
 <span class="source-line-no">058</span><span id="line-58">import org.jdrupes.vmoperator.manager.events.VmChannel;</span>
 <span class="source-line-no">059</span><span id="line-59">import org.jdrupes.vmoperator.manager.events.VmDefChanged;</span>
@@ -822,165 +822,160 @@
 <span class="source-line-no">808</span><span id="line-808">                Map.of("autoClose", 5_000, "type", "Warning")));</span>
 <span class="source-line-no">809</span><span id="line-809">            return;</span>
 <span class="source-line-no">810</span><span id="line-810">        }</span>
-<span class="source-line-no">811</span><span id="line-811">        var pwQuery = Event.onCompletion(new PrepareConsole(vmDef, user,</span>
-<span class="source-line-no">812</span><span id="line-812">            model.mode() == ResourceModel.Mode.POOL),</span>
-<span class="source-line-no">813</span><span id="line-813">            e -&gt; gotPassword(channel, model, vmDef, e));</span>
-<span class="source-line-no">814</span><span id="line-814">        fire(pwQuery, vmChannel);</span>
-<span class="source-line-no">815</span><span id="line-815">    }</span>
-<span class="source-line-no">816</span><span id="line-816"></span>
-<span class="source-line-no">817</span><span id="line-817">    private void gotPassword(ConsoleConnection channel, ResourceModel model,</span>
-<span class="source-line-no">818</span><span id="line-818">            VmDefinition vmDef, PrepareConsole event) {</span>
-<span class="source-line-no">819</span><span id="line-819">        if (!event.passwordAvailable()) {</span>
-<span class="source-line-no">820</span><span id="line-820">            return;</span>
-<span class="source-line-no">821</span><span id="line-821">        }</span>
-<span class="source-line-no">822</span><span id="line-822">        vmDef.extra().map(xtra -&gt; xtra.connectionFile(event.password(),</span>
-<span class="source-line-no">823</span><span id="line-823">            preferredIpVersion, deleteConnectionFile))</span>
-<span class="source-line-no">824</span><span id="line-824">            .ifPresent(cf -&gt; channel.respond(new NotifyConletView(type(),</span>
-<span class="source-line-no">825</span><span id="line-825">                model.getConletId(), "openConsole", cf)));</span>
-<span class="source-line-no">826</span><span id="line-826">    }</span>
-<span class="source-line-no">827</span><span id="line-827"></span>
-<span class="source-line-no">828</span><span id="line-828">    @SuppressWarnings({ "PMD.AvoidLiteralsInIfCondition",</span>
-<span class="source-line-no">829</span><span id="line-829">        "PMD.UseLocaleWithCaseConversions" })</span>
-<span class="source-line-no">830</span><span id="line-830">    private void selectResource(NotifyConletModel event,</span>
-<span class="source-line-no">831</span><span id="line-831">            ConsoleConnection channel, ResourceModel model)</span>
-<span class="source-line-no">832</span><span id="line-832">            throws JsonProcessingException, InterruptedException {</span>
-<span class="source-line-no">833</span><span id="line-833">        try {</span>
-<span class="source-line-no">834</span><span id="line-834">            model.setMode(ResourceModel.Mode</span>
-<span class="source-line-no">835</span><span id="line-835">                .valueOf(event.&lt;String&gt; param(0).toUpperCase()));</span>
-<span class="source-line-no">836</span><span id="line-836">            model.setName(event.param(1));</span>
-<span class="source-line-no">837</span><span id="line-837">            String jsonState = objectMapper.writeValueAsString(model);</span>
-<span class="source-line-no">838</span><span id="line-838">            channel.respond(new KeyValueStoreUpdate().update(storagePath(</span>
-<span class="source-line-no">839</span><span id="line-839">                channel.session(), model.getConletId()), jsonState));</span>
-<span class="source-line-no">840</span><span id="line-840">            updatePreview(channel, model,</span>
-<span class="source-line-no">841</span><span id="line-841">                getVmData(model, channel).map(VmData::definition).orElse(null));</span>
-<span class="source-line-no">842</span><span id="line-842">        } catch (IllegalArgumentException e) {</span>
-<span class="source-line-no">843</span><span id="line-843">            logger.warning(() -&gt; "Invalid resource type: " + e.getMessage());</span>
-<span class="source-line-no">844</span><span id="line-844">        }</span>
-<span class="source-line-no">845</span><span id="line-845">    }</span>
-<span class="source-line-no">846</span><span id="line-846"></span>
-<span class="source-line-no">847</span><span id="line-847">    @Override</span>
-<span class="source-line-no">848</span><span id="line-848">    protected boolean doSetLocale(SetLocale event, ConsoleConnection channel,</span>
-<span class="source-line-no">849</span><span id="line-849">            String conletId) throws Exception {</span>
-<span class="source-line-no">850</span><span id="line-850">        return true;</span>
-<span class="source-line-no">851</span><span id="line-851">    }</span>
-<span class="source-line-no">852</span><span id="line-852"></span>
-<span class="source-line-no">853</span><span id="line-853">    /**</span>
-<span class="source-line-no">854</span><span id="line-854">     * The Class AccessModel.</span>
-<span class="source-line-no">855</span><span id="line-855">     */</span>
-<span class="source-line-no">856</span><span id="line-856">    @SuppressWarnings("PMD.DataClass")</span>
-<span class="source-line-no">857</span><span id="line-857">    public static class ResourceModel extends ConletBaseModel {</span>
-<span class="source-line-no">858</span><span id="line-858"></span>
-<span class="source-line-no">859</span><span id="line-859">        /**</span>
-<span class="source-line-no">860</span><span id="line-860">         * The Enum ResourceType.</span>
-<span class="source-line-no">861</span><span id="line-861">         */</span>
-<span class="source-line-no">862</span><span id="line-862">        @SuppressWarnings("PMD.ShortVariable")</span>
-<span class="source-line-no">863</span><span id="line-863">        public enum Mode {</span>
-<span class="source-line-no">864</span><span id="line-864">            VM, POOL</span>
-<span class="source-line-no">865</span><span id="line-865">        }</span>
-<span class="source-line-no">866</span><span id="line-866"></span>
-<span class="source-line-no">867</span><span id="line-867">        private Mode mode;</span>
-<span class="source-line-no">868</span><span id="line-868">        private String name;</span>
-<span class="source-line-no">869</span><span id="line-869">        private String assignedVm;</span>
-<span class="source-line-no">870</span><span id="line-870"></span>
-<span class="source-line-no">871</span><span id="line-871">        /**</span>
-<span class="source-line-no">872</span><span id="line-872">         * Instantiates a new resource model.</span>
-<span class="source-line-no">873</span><span id="line-873">         *</span>
-<span class="source-line-no">874</span><span id="line-874">         * @param conletId the conlet id</span>
-<span class="source-line-no">875</span><span id="line-875">         */</span>
-<span class="source-line-no">876</span><span id="line-876">        public ResourceModel(@JsonProperty("conletId") String conletId) {</span>
-<span class="source-line-no">877</span><span id="line-877">            super(conletId);</span>
-<span class="source-line-no">878</span><span id="line-878">        }</span>
-<span class="source-line-no">879</span><span id="line-879"></span>
-<span class="source-line-no">880</span><span id="line-880">        /**</span>
-<span class="source-line-no">881</span><span id="line-881">         * Returns the mode.</span>
-<span class="source-line-no">882</span><span id="line-882">         *</span>
-<span class="source-line-no">883</span><span id="line-883">         * @return the resourceType</span>
-<span class="source-line-no">884</span><span id="line-884">         */</span>
-<span class="source-line-no">885</span><span id="line-885">        @JsonGetter("mode")</span>
-<span class="source-line-no">886</span><span id="line-886">        public Mode mode() {</span>
-<span class="source-line-no">887</span><span id="line-887">            return mode;</span>
-<span class="source-line-no">888</span><span id="line-888">        }</span>
-<span class="source-line-no">889</span><span id="line-889"></span>
-<span class="source-line-no">890</span><span id="line-890">        /**</span>
-<span class="source-line-no">891</span><span id="line-891">         * Sets the mode.</span>
-<span class="source-line-no">892</span><span id="line-892">         *</span>
-<span class="source-line-no">893</span><span id="line-893">         * @param mode the resource mode to set</span>
-<span class="source-line-no">894</span><span id="line-894">         */</span>
-<span class="source-line-no">895</span><span id="line-895">        public void setMode(Mode mode) {</span>
-<span class="source-line-no">896</span><span id="line-896">            this.mode = mode;</span>
-<span class="source-line-no">897</span><span id="line-897">        }</span>
-<span class="source-line-no">898</span><span id="line-898"></span>
-<span class="source-line-no">899</span><span id="line-899">        /**</span>
-<span class="source-line-no">900</span><span id="line-900">         * Gets the resource name.</span>
-<span class="source-line-no">901</span><span id="line-901">         *</span>
-<span class="source-line-no">902</span><span id="line-902">         * @return the string</span>
-<span class="source-line-no">903</span><span id="line-903">         */</span>
-<span class="source-line-no">904</span><span id="line-904">        @JsonGetter("name")</span>
-<span class="source-line-no">905</span><span id="line-905">        public String name() {</span>
-<span class="source-line-no">906</span><span id="line-906">            return name;</span>
-<span class="source-line-no">907</span><span id="line-907">        }</span>
-<span class="source-line-no">908</span><span id="line-908"></span>
-<span class="source-line-no">909</span><span id="line-909">        /**</span>
-<span class="source-line-no">910</span><span id="line-910">         * Sets the name.</span>
-<span class="source-line-no">911</span><span id="line-911">         *</span>
-<span class="source-line-no">912</span><span id="line-912">         * @param name the resource name to set</span>
-<span class="source-line-no">913</span><span id="line-913">         */</span>
-<span class="source-line-no">914</span><span id="line-914">        public void setName(String name) {</span>
-<span class="source-line-no">915</span><span id="line-915">            this.name = name;</span>
-<span class="source-line-no">916</span><span id="line-916">        }</span>
-<span class="source-line-no">917</span><span id="line-917"></span>
-<span class="source-line-no">918</span><span id="line-918">        /**</span>
-<span class="source-line-no">919</span><span id="line-919">         * Gets the assigned vm.</span>
-<span class="source-line-no">920</span><span id="line-920">         *</span>
-<span class="source-line-no">921</span><span id="line-921">         * @return the string</span>
-<span class="source-line-no">922</span><span id="line-922">         */</span>
-<span class="source-line-no">923</span><span id="line-923">        @JsonGetter("assignedVm")</span>
-<span class="source-line-no">924</span><span id="line-924">        public String assignedVm() {</span>
-<span class="source-line-no">925</span><span id="line-925">            return assignedVm;</span>
-<span class="source-line-no">926</span><span id="line-926">        }</span>
-<span class="source-line-no">927</span><span id="line-927"></span>
-<span class="source-line-no">928</span><span id="line-928">        /**</span>
-<span class="source-line-no">929</span><span id="line-929">         * Sets the assigned vm.</span>
-<span class="source-line-no">930</span><span id="line-930">         *</span>
-<span class="source-line-no">931</span><span id="line-931">         * @param name the assigned vm</span>
-<span class="source-line-no">932</span><span id="line-932">         */</span>
-<span class="source-line-no">933</span><span id="line-933">        public void setAssignedVm(String name) {</span>
-<span class="source-line-no">934</span><span id="line-934">            this.assignedVm = name;</span>
-<span class="source-line-no">935</span><span id="line-935">        }</span>
-<span class="source-line-no">936</span><span id="line-936"></span>
-<span class="source-line-no">937</span><span id="line-937">        @Override</span>
-<span class="source-line-no">938</span><span id="line-938">        public int hashCode() {</span>
-<span class="source-line-no">939</span><span id="line-939">            final int prime = 31;</span>
-<span class="source-line-no">940</span><span id="line-940">            int result = super.hashCode();</span>
-<span class="source-line-no">941</span><span id="line-941">            result = prime * result + java.util.Objects.hash(mode, name);</span>
-<span class="source-line-no">942</span><span id="line-942">            return result;</span>
-<span class="source-line-no">943</span><span id="line-943">        }</span>
-<span class="source-line-no">944</span><span id="line-944"></span>
-<span class="source-line-no">945</span><span id="line-945">        @Override</span>
-<span class="source-line-no">946</span><span id="line-946">        public boolean equals(Object obj) {</span>
-<span class="source-line-no">947</span><span id="line-947">            if (this == obj) {</span>
-<span class="source-line-no">948</span><span id="line-948">                return true;</span>
-<span class="source-line-no">949</span><span id="line-949">            }</span>
-<span class="source-line-no">950</span><span id="line-950">            if (!super.equals(obj)) {</span>
-<span class="source-line-no">951</span><span id="line-951">                return false;</span>
-<span class="source-line-no">952</span><span id="line-952">            }</span>
-<span class="source-line-no">953</span><span id="line-953">            if (getClass() != obj.getClass()) {</span>
-<span class="source-line-no">954</span><span id="line-954">                return false;</span>
-<span class="source-line-no">955</span><span id="line-955">            }</span>
-<span class="source-line-no">956</span><span id="line-956">            ResourceModel other = (ResourceModel) obj;</span>
-<span class="source-line-no">957</span><span id="line-957">            return mode == other.mode</span>
-<span class="source-line-no">958</span><span id="line-958">                &amp;&amp; java.util.Objects.equals(name, other.name);</span>
-<span class="source-line-no">959</span><span id="line-959">        }</span>
-<span class="source-line-no">960</span><span id="line-960"></span>
-<span class="source-line-no">961</span><span id="line-961">        @Override</span>
-<span class="source-line-no">962</span><span id="line-962">        public String toString() {</span>
-<span class="source-line-no">963</span><span id="line-963">            StringBuilder builder = new StringBuilder(50);</span>
-<span class="source-line-no">964</span><span id="line-964">            builder.append("AccessModel [mode=").append(mode)</span>
-<span class="source-line-no">965</span><span id="line-965">                .append(", name=").append(name).append(']');</span>
-<span class="source-line-no">966</span><span id="line-966">            return builder.toString();</span>
-<span class="source-line-no">967</span><span id="line-967">        }</span>
-<span class="source-line-no">968</span><span id="line-968">    }</span>
-<span class="source-line-no">969</span><span id="line-969">}</span>
+<span class="source-line-no">811</span><span id="line-811">        var pwQuery = Event.onCompletion(new GetDisplayPassword(vmDef, user),</span>
+<span class="source-line-no">812</span><span id="line-812">            e -&gt; {</span>
+<span class="source-line-no">813</span><span id="line-813">                vmDef.extra()</span>
+<span class="source-line-no">814</span><span id="line-814">                    .map(xtra -&gt; xtra.connectionFile(e.password().orElse(null),</span>
+<span class="source-line-no">815</span><span id="line-815">                        preferredIpVersion, deleteConnectionFile))</span>
+<span class="source-line-no">816</span><span id="line-816">                    .ifPresent(</span>
+<span class="source-line-no">817</span><span id="line-817">                        cf -&gt; channel.respond(new NotifyConletView(type(),</span>
+<span class="source-line-no">818</span><span id="line-818">                            model.getConletId(), "openConsole", cf)));</span>
+<span class="source-line-no">819</span><span id="line-819">            });</span>
+<span class="source-line-no">820</span><span id="line-820">        fire(pwQuery, vmChannel);</span>
+<span class="source-line-no">821</span><span id="line-821">    }</span>
+<span class="source-line-no">822</span><span id="line-822"></span>
+<span class="source-line-no">823</span><span id="line-823">    @SuppressWarnings({ "PMD.AvoidLiteralsInIfCondition",</span>
+<span class="source-line-no">824</span><span id="line-824">        "PMD.UseLocaleWithCaseConversions" })</span>
+<span class="source-line-no">825</span><span id="line-825">    private void selectResource(NotifyConletModel event,</span>
+<span class="source-line-no">826</span><span id="line-826">            ConsoleConnection channel, ResourceModel model)</span>
+<span class="source-line-no">827</span><span id="line-827">            throws JsonProcessingException, InterruptedException {</span>
+<span class="source-line-no">828</span><span id="line-828">        try {</span>
+<span class="source-line-no">829</span><span id="line-829">            model.setMode(ResourceModel.Mode</span>
+<span class="source-line-no">830</span><span id="line-830">                .valueOf(event.&lt;String&gt; param(0).toUpperCase()));</span>
+<span class="source-line-no">831</span><span id="line-831">            model.setName(event.param(1));</span>
+<span class="source-line-no">832</span><span id="line-832">            String jsonState = objectMapper.writeValueAsString(model);</span>
+<span class="source-line-no">833</span><span id="line-833">            channel.respond(new KeyValueStoreUpdate().update(storagePath(</span>
+<span class="source-line-no">834</span><span id="line-834">                channel.session(), model.getConletId()), jsonState));</span>
+<span class="source-line-no">835</span><span id="line-835">            updatePreview(channel, model,</span>
+<span class="source-line-no">836</span><span id="line-836">                getVmData(model, channel).map(VmData::definition).orElse(null));</span>
+<span class="source-line-no">837</span><span id="line-837">        } catch (IllegalArgumentException e) {</span>
+<span class="source-line-no">838</span><span id="line-838">            logger.warning(() -&gt; "Invalid resource type: " + e.getMessage());</span>
+<span class="source-line-no">839</span><span id="line-839">        }</span>
+<span class="source-line-no">840</span><span id="line-840">    }</span>
+<span class="source-line-no">841</span><span id="line-841"></span>
+<span class="source-line-no">842</span><span id="line-842">    @Override</span>
+<span class="source-line-no">843</span><span id="line-843">    protected boolean doSetLocale(SetLocale event, ConsoleConnection channel,</span>
+<span class="source-line-no">844</span><span id="line-844">            String conletId) throws Exception {</span>
+<span class="source-line-no">845</span><span id="line-845">        return true;</span>
+<span class="source-line-no">846</span><span id="line-846">    }</span>
+<span class="source-line-no">847</span><span id="line-847"></span>
+<span class="source-line-no">848</span><span id="line-848">    /**</span>
+<span class="source-line-no">849</span><span id="line-849">     * The Class AccessModel.</span>
+<span class="source-line-no">850</span><span id="line-850">     */</span>
+<span class="source-line-no">851</span><span id="line-851">    @SuppressWarnings("PMD.DataClass")</span>
+<span class="source-line-no">852</span><span id="line-852">    public static class ResourceModel extends ConletBaseModel {</span>
+<span class="source-line-no">853</span><span id="line-853"></span>
+<span class="source-line-no">854</span><span id="line-854">        /**</span>
+<span class="source-line-no">855</span><span id="line-855">         * The Enum ResourceType.</span>
+<span class="source-line-no">856</span><span id="line-856">         */</span>
+<span class="source-line-no">857</span><span id="line-857">        @SuppressWarnings("PMD.ShortVariable")</span>
+<span class="source-line-no">858</span><span id="line-858">        public enum Mode {</span>
+<span class="source-line-no">859</span><span id="line-859">            VM, POOL</span>
+<span class="source-line-no">860</span><span id="line-860">        }</span>
+<span class="source-line-no">861</span><span id="line-861"></span>
+<span class="source-line-no">862</span><span id="line-862">        private Mode mode;</span>
+<span class="source-line-no">863</span><span id="line-863">        private String name;</span>
+<span class="source-line-no">864</span><span id="line-864">        private String assignedVm;</span>
+<span class="source-line-no">865</span><span id="line-865"></span>
+<span class="source-line-no">866</span><span id="line-866">        /**</span>
+<span class="source-line-no">867</span><span id="line-867">         * Instantiates a new resource model.</span>
+<span class="source-line-no">868</span><span id="line-868">         *</span>
+<span class="source-line-no">869</span><span id="line-869">         * @param conletId the conlet id</span>
+<span class="source-line-no">870</span><span id="line-870">         */</span>
+<span class="source-line-no">871</span><span id="line-871">        public ResourceModel(@JsonProperty("conletId") String conletId) {</span>
+<span class="source-line-no">872</span><span id="line-872">            super(conletId);</span>
+<span class="source-line-no">873</span><span id="line-873">        }</span>
+<span class="source-line-no">874</span><span id="line-874"></span>
+<span class="source-line-no">875</span><span id="line-875">        /**</span>
+<span class="source-line-no">876</span><span id="line-876">         * Returns the mode.</span>
+<span class="source-line-no">877</span><span id="line-877">         *</span>
+<span class="source-line-no">878</span><span id="line-878">         * @return the resourceType</span>
+<span class="source-line-no">879</span><span id="line-879">         */</span>
+<span class="source-line-no">880</span><span id="line-880">        @JsonGetter("mode")</span>
+<span class="source-line-no">881</span><span id="line-881">        public Mode mode() {</span>
+<span class="source-line-no">882</span><span id="line-882">            return mode;</span>
+<span class="source-line-no">883</span><span id="line-883">        }</span>
+<span class="source-line-no">884</span><span id="line-884"></span>
+<span class="source-line-no">885</span><span id="line-885">        /**</span>
+<span class="source-line-no">886</span><span id="line-886">         * Sets the mode.</span>
+<span class="source-line-no">887</span><span id="line-887">         *</span>
+<span class="source-line-no">888</span><span id="line-888">         * @param mode the resource mode to set</span>
+<span class="source-line-no">889</span><span id="line-889">         */</span>
+<span class="source-line-no">890</span><span id="line-890">        public void setMode(Mode mode) {</span>
+<span class="source-line-no">891</span><span id="line-891">            this.mode = mode;</span>
+<span class="source-line-no">892</span><span id="line-892">        }</span>
+<span class="source-line-no">893</span><span id="line-893"></span>
+<span class="source-line-no">894</span><span id="line-894">        /**</span>
+<span class="source-line-no">895</span><span id="line-895">         * Gets the resource name.</span>
+<span class="source-line-no">896</span><span id="line-896">         *</span>
+<span class="source-line-no">897</span><span id="line-897">         * @return the string</span>
+<span class="source-line-no">898</span><span id="line-898">         */</span>
+<span class="source-line-no">899</span><span id="line-899">        @JsonGetter("name")</span>
+<span class="source-line-no">900</span><span id="line-900">        public String name() {</span>
+<span class="source-line-no">901</span><span id="line-901">            return name;</span>
+<span class="source-line-no">902</span><span id="line-902">        }</span>
+<span class="source-line-no">903</span><span id="line-903"></span>
+<span class="source-line-no">904</span><span id="line-904">        /**</span>
+<span class="source-line-no">905</span><span id="line-905">         * Sets the name.</span>
+<span class="source-line-no">906</span><span id="line-906">         *</span>
+<span class="source-line-no">907</span><span id="line-907">         * @param name the resource name to set</span>
+<span class="source-line-no">908</span><span id="line-908">         */</span>
+<span class="source-line-no">909</span><span id="line-909">        public void setName(String name) {</span>
+<span class="source-line-no">910</span><span id="line-910">            this.name = name;</span>
+<span class="source-line-no">911</span><span id="line-911">        }</span>
+<span class="source-line-no">912</span><span id="line-912"></span>
+<span class="source-line-no">913</span><span id="line-913">        /**</span>
+<span class="source-line-no">914</span><span id="line-914">         * Gets the assigned vm.</span>
+<span class="source-line-no">915</span><span id="line-915">         *</span>
+<span class="source-line-no">916</span><span id="line-916">         * @return the string</span>
+<span class="source-line-no">917</span><span id="line-917">         */</span>
+<span class="source-line-no">918</span><span id="line-918">        @JsonGetter("assignedVm")</span>
+<span class="source-line-no">919</span><span id="line-919">        public String assignedVm() {</span>
+<span class="source-line-no">920</span><span id="line-920">            return assignedVm;</span>
+<span class="source-line-no">921</span><span id="line-921">        }</span>
+<span class="source-line-no">922</span><span id="line-922"></span>
+<span class="source-line-no">923</span><span id="line-923">        /**</span>
+<span class="source-line-no">924</span><span id="line-924">         * Sets the assigned vm.</span>
+<span class="source-line-no">925</span><span id="line-925">         *</span>
+<span class="source-line-no">926</span><span id="line-926">         * @param name the assigned vm</span>
+<span class="source-line-no">927</span><span id="line-927">         */</span>
+<span class="source-line-no">928</span><span id="line-928">        public void setAssignedVm(String name) {</span>
+<span class="source-line-no">929</span><span id="line-929">            this.assignedVm = name;</span>
+<span class="source-line-no">930</span><span id="line-930">        }</span>
+<span class="source-line-no">931</span><span id="line-931"></span>
+<span class="source-line-no">932</span><span id="line-932">        @Override</span>
+<span class="source-line-no">933</span><span id="line-933">        public int hashCode() {</span>
+<span class="source-line-no">934</span><span id="line-934">            final int prime = 31;</span>
+<span class="source-line-no">935</span><span id="line-935">            int result = super.hashCode();</span>
+<span class="source-line-no">936</span><span id="line-936">            result = prime * result + java.util.Objects.hash(mode, name);</span>
+<span class="source-line-no">937</span><span id="line-937">            return result;</span>
+<span class="source-line-no">938</span><span id="line-938">        }</span>
+<span class="source-line-no">939</span><span id="line-939"></span>
+<span class="source-line-no">940</span><span id="line-940">        @Override</span>
+<span class="source-line-no">941</span><span id="line-941">        public boolean equals(Object obj) {</span>
+<span class="source-line-no">942</span><span id="line-942">            if (this == obj) {</span>
+<span class="source-line-no">943</span><span id="line-943">                return true;</span>
+<span class="source-line-no">944</span><span id="line-944">            }</span>
+<span class="source-line-no">945</span><span id="line-945">            if (!super.equals(obj)) {</span>
+<span class="source-line-no">946</span><span id="line-946">                return false;</span>
+<span class="source-line-no">947</span><span id="line-947">            }</span>
+<span class="source-line-no">948</span><span id="line-948">            if (getClass() != obj.getClass()) {</span>
+<span class="source-line-no">949</span><span id="line-949">                return false;</span>
+<span class="source-line-no">950</span><span id="line-950">            }</span>
+<span class="source-line-no">951</span><span id="line-951">            ResourceModel other = (ResourceModel) obj;</span>
+<span class="source-line-no">952</span><span id="line-952">            return mode == other.mode</span>
+<span class="source-line-no">953</span><span id="line-953">                &amp;&amp; java.util.Objects.equals(name, other.name);</span>
+<span class="source-line-no">954</span><span id="line-954">        }</span>
+<span class="source-line-no">955</span><span id="line-955"></span>
+<span class="source-line-no">956</span><span id="line-956">        @Override</span>
+<span class="source-line-no">957</span><span id="line-957">        public String toString() {</span>
+<span class="source-line-no">958</span><span id="line-958">            StringBuilder builder = new StringBuilder(50);</span>
+<span class="source-line-no">959</span><span id="line-959">            builder.append("AccessModel [mode=").append(mode)</span>
+<span class="source-line-no">960</span><span id="line-960">                .append(", name=").append(name).append(']');</span>
+<span class="source-line-no">961</span><span id="line-961">            return builder.toString();</span>
+<span class="source-line-no">962</span><span id="line-962">        }</span>
+<span class="source-line-no">963</span><span id="line-963">    }</span>
+<span class="source-line-no">964</span><span id="line-964">}</span>
 
 
 
