@@ -17,7 +17,7 @@ A javadoc doclet that handles Markdown comments.
 
 A non-blocking HTTP codec without any dependencies.
 
-## [VM-Operator](vm-operator/)
+## [VM-Operator](https://vm-operator.jdrupes.org/)
 
 A Kubernetes operator for running virtual machines (notably Qemu VMs) as pods.
 
