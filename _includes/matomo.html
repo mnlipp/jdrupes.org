@@ -1,20 +1,23 @@
 <!-- Matomo anonymous, no cookies (https://matomo.org/blog/2018/04/how-to-not-process-any-personal-data-with-matomo-and-what-it-means-for-you/) -->
-<script>
-  var _paq = window._paq = window._paq || [];
+<script type="text/javascript">
+  var _paq = _paq || [];
   /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
   _paq.push(["setDocumentTitle", document.domain + "/" + document.title]);
-  _paq.push(["setCookieDomain", "*.jdrupes.org"]);
-  _paq.push(["setDomains", ["*.jdrupes.org"]]);
+  _paq.push(["setCookieDomain", "*.mnlipp.github.io"]);
+  _paq.push(["setDomains", ["*.mnlipp.github.io", "*.jdrupes.org", "kubernetes-vm-operator.readthedocs.io"]]);
   _paq.push(['disableCookies']);
   _paq.push(['trackPageView']);
   _paq.push(['enableLinkTracking']);
   (function() {
     var u="//piwik.mnl.de/";
-    _paq.push(['setTrackerUrl', u+'matomo.php']);
-    _paq.push(['setSiteId', '15']);
+    _paq.push(['setTrackerUrl', u+'piwik.php']);
+    _paq.push(['setSiteId', '17']);
     var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
-    g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+    g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
   })();
 </script>
-<noscript><p><img referrerpolicy="no-referrer-when-downgrade" src="//piwik.mnl.de/matomo.php?idsite=15&amp;rec=1" style="border:0;" alt="" /></p></noscript>
+<noscript>
+<img src="https://piwik.mnl.de/piwik.php?idsite=17&amp;rec=1&amp;action_name=JGrapes" style="border:0" alt="" />
+</noscript>
 <!-- End Matomo Code -->
+
