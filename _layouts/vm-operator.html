@@ -11,8 +11,8 @@
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link href="../pagefind/pagefind-ui.css" rel="stylesheet">
-    <script src="../pagefind/pagefind-ui.js"></script>
+    <link href="/vm-operator/pagefind/pagefind-ui.css" rel="stylesheet">
+    <script src="/vm-operator/pagefind/pagefind-ui.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', (event) => {
           new PagefindUI({ element: "#search", showSubResults: true,
@@ -68,7 +68,7 @@
         <li><p class="part-entry"><a href="user-gui.html">For Users</a></p></li>
         </ul>
         <p class="part-list-title"><a href="upgrading.html">Upgrading</a></p>
-        <p class="part-list-title"><a href="latest-release/javadoc/index.html">Javadoc</a></p>
+        <p class="part-list-title"><a href="https://jdrupes.org/vm-operator/latest-release/javadoc/index.html">Javadoc</a></p>
 
       </header>
       <section>
@@ -81,9 +81,26 @@
         {{ content }}
       </section>
       <footer>
-        <p><small>Hosted on GitHub Pages &mdash; <a href="https://github.com/site/terms">Terms</a>
-        &mdash; <a href="https://github.com/site/privacy">Privacy</a> 
-        &mdash; Theme derived from <a href="https://github.com/orderedlist/minimal">minimal</a></small></p>
+        <!-- Optional footer data -->
+        <p id=githubfooter style="display: none"><small>
+          Hosted on GitHub Pages &mdash; 
+          <a href="https://github.com/site/terms" target="_top">Terms</a>
+          &mdash; <a href="https://github.com/site/privacy" target="_top">Privacy</a>
+          &mdash; Theme derived from <a href="https://github.com/orderedlist/minimal">minimal</a></small>
+        </p>
+        <p id=readthedocsfooter style="display: none"><small>
+          Hosted on Readthedocs &mdash; 
+          <a href="https://docs.readthedocs.io/page/terms-of-service.html" target="_top">Terms</a>
+          &mdash; <a href="https://docs.readthedocs.io/page/privacy-policy.html" target="_top">Privacy</a>
+          &mdash; Theme derived from <a href="https://github.com/orderedlist/minimal">minimal</a></small>
+        </p>
+        <script type="text/javascript">
+        if (location.hostname.indexOf("github") !== -1 || location.hostname.indexOf("jdrupes.org") !== -1) {
+            document.getElementById("githubfooter").style.display="inherit";
+        } else if (location.hostname.indexOf("readthedocs") !== -1) {
+          document.getElementById("readthedocsfooter").style.display="inherit";
+        }
+        </script>
       </footer>
     </div>
 
