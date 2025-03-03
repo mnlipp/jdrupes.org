@@ -49,6 +49,11 @@ jobs:
         run: bundle exec jekyll build
         env:
           JEKYLL_ENV: production
+      - name: Generate the sitemap
+        uses: cicirello/generate-sitemap@v1
+        with:
+          path-to-root: _site
+          base-url-path: https://jdrupes.org
       - name: Index pagefind
         run: npx pagefind --source "_site/vm-operator"          
       - name: Upload artifact
