@@ -54,8 +54,6 @@ jobs:
         with:
           path-to-root: _site
           base-url-path: https://jdrupes.org
-      - name: Index pagefind
-        run: npx pagefind --source "_site/vm-operator"          
       - name: Upload artifact
         # Automatically uploads an artifact from the './_site' directory by default
         uses: actions/upload-pages-artifact@v3
